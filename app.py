@@ -211,7 +211,7 @@ def renderizar_painel_adm(matriz_receitas, fila_producao, estoque_atual, perfil)
                         st.success("Tabela ajustada!")
                         st.rerun()
                 else:
-                    st.info("O estoque está vazio. Cadastre uma receita no cofre primeiro.")
+                    st.info("O estoque está vazio. Cadastre uma receita no cofre primeiro ou adicione insumos.")
         tab_idx += 1
 
     if "💰 Precificação (CMV)" in abas_disponiveis:
@@ -279,34 +279,75 @@ def renderizar_painel_adm(matriz_receitas, fila_producao, estoque_atual, perfil)
             
     if "🔐 Cofre P&D" in abas_disponiveis:
         with tabs[tab_idx]:
-            st.subheader("🔐 Cofre de Formulações (P&D)")
+            st.subheader("🔐 Cofre de Formulações (Ficha Técnica)")
+            
+            # ATUALIZAÇÃO DO RECEITUÁRIO: Seleção direta do Estoque e Layout limpo
+            opcoes_bd = sorted(list(estoque_atual.keys())) if estoque_atual else []
+            
             with st.form("form_nova_receita", border=True):
-                st.markdown("### ➕ Nova Formulação")
+                st.markdown("### ➕ Montar Nova Ficha Técnica")
                 c1, c2 = st.columns([1, 3])
-                with c1: sku = st.text_input("SKU (Ex: ACAI-01):")
-                with c2: nome = st.text_input("Nome Comercial do Sabor:")
+                with c1: sku = st.text_input("Cód. SKU (Ex: ACAI-01):")
+                with c2: nome = st.text_input("Nome Comercial da Formulação:")
+                
                 c3, c4 = st.columns(2)
-                with c3: und_nome = st.text_input("Tipo Embalagem (Ex: Caixa 5L):")
-                with c4: und_peso = st.number_input("Peso (kg):", value=2.500, format="%.3f")
-                modo_preparo = st.text_area("Procedimento Operacional Padrão:")
-                st.markdown("**Matriz de Ingredientes (Proporções):**")
-                df_vazio = pd.DataFrame([{"Ingrediente": "", "Quantidade": 0.0} for _ in range(12)])
-                df_ing = st.data_editor(df_vazio, num_rows="dynamic", use_container_width=True)
-                if st.form_submit_button("💾 Blindar Formulação", type="primary"):
-                    formula = {str(r["Ingrediente"]).strip(): float(r["Quantidade"]) for _, r in df_ing.iterrows() if str(r["Ingrediente"]).strip() != "" and float(r["Quantidade"]) > 0}
+                with c3: und_nome = st.text_input("Embalagem de Venda (Ex: Caixa 5L, Pote 2L):")
+                with c4: und_peso = st.number_input("Peso Líquido da Embalagem (kg):", value=2.500, format="%.3f")
+                
+                modo_preparo = st.text_area("Procedimento Operacional Padrão (POP):", placeholder="1. Misturar ingredientes secos...\n2. Adicionar líquidos...")
+                
+                st.markdown("---")
+                st.markdown("### 🧬 Matriz de Ingredientes")
+                st.caption("Atenção: Os ingredientes abaixo são puxados automaticamente do seu Estoque atual para evitar erros de cálculo do CMV.")
+                
+                df_vazio = pd.DataFrame([{"Insumo (Puxado do Estoque)": None, "Quantidade": 0.0} for _ in range(12)])
+                
+                # O Segredo do Arquiteto: Tabela Inteligente com Dropdown
+                df_ing = st.data_editor(
+                    df_vazio, 
+                    column_config={
+                        "Insumo (Puxado do Estoque)": st.column_config.SelectboxColumn(
+                            "Selecione o Insumo", 
+                            options=opcoes_bd,
+                            required=True
+                        ),
+                        "Quantidade": st.column_config.NumberColumn(
+                            "Quantidade na Receita Base (kg ou g)",
+                            min_value=0.0,
+                            format="%.3f"
+                        )
+                    },
+                    num_rows="dynamic", 
+                    use_container_width=True
+                )
+                
+                if st.form_submit_button("💾 Blindar Ficha Técnica no Cofre", type="primary"):
+                    # Filtra apenas os ingredientes selecionados corretamente e com quantidade maior que zero
+                    formula = {str(r["Insumo (Puxado do Estoque)"]).strip(): float(r["Quantidade"]) for _, r in df_ing.iterrows() if r["Insumo (Puxado do Estoque)"] and str(r["Insumo (Puxado do Estoque)"]).strip() != "" and float(r["Quantidade"]) > 0}
+                    
                     if nome and und_nome and formula and sku:
                         executar_query("INSERT OR REPLACE INTO receitas (nome, ingredientes, und_nome, und_peso, modo_preparo, sku) VALUES (?, ?, ?, ?, ?, ?)", (nome, json.dumps(formula), und_nome, und_peso, modo_preparo, sku.upper()))
-                        st.success("Formulação salva no cofre!")
+                        
+                        # Atualiza o banco de estoque automaticamente caso seja um ingrediente novo
+                        for ing in formula.keys():
+                            if ing not in estoque_atual:
+                                executar_query("INSERT INTO estoque (ingrediente, custo_kg, qtd_atual_kg) VALUES (?, 0.0, 0.0)", (ing,))
+                                
+                        st.success(f"Ficha Técnica de {nome} salva com sucesso!")
                         st.rerun()
-                    else: st.error("Preencha SKU, Nome e ingredientes.")
+                    else: 
+                        st.error("Preencha o SKU, Nome e selecione pelo menos um ingrediente na tabela.")
 
             if matriz_receitas:
-                st.markdown("### 📚 Arquivo Geral")
+                st.markdown("---")
+                st.markdown("### 📚 Arquivo Geral de Fichas Técnicas")
                 for rec, dados in matriz_receitas.items():
-                    with st.expander(f"📖 [{dados['sku']}] {rec}"):
+                    with st.expander(f"📁 Ficha Técnica: [{dados['sku']}] {rec} - Rendimento: {dados['und_peso']}kg/un"):
+                        st.markdown("**Composição da Fórmula:**")
                         st.json(dados["ingredientes"])
+                        st.markdown("**Modo de Preparo (POP):**")
                         st.info(dados["modo_preparo"])
-                        if st.button(f"🗑 Excluir", key=f"del_{rec}"):
+                        if st.button(f"🗑 Excluir Ficha Técnica", key=f"del_{rec}"):
                             executar_query("DELETE FROM receitas WHERE nome = ?", (rec,))
                             st.rerun()
         tab_idx += 1
