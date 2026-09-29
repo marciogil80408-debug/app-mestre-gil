@@ -287,7 +287,6 @@ if not st.session_state["autenticado"]:
                 else:
                     st.error("❌ Credenciais inválidas.")
 else:
-    # Informações do Usuário na Lateral
     st.sidebar.markdown(f"""
         <div style="text-align:center; padding: 10px; background-color: #0f172a; border-radius: 10px; border: 1px solid #3b82f6; margin-bottom: 15px;">
             <h2 style="color: #60a5fa; margin:0;">🏭 MESTRE GIL</h2>
@@ -306,7 +305,6 @@ else:
     linhas_hist = carregar_dados_tabela("SELECT id, receita, meta_kg, caixas, peseiro, batedor, obs, data_hora FROM historico ORDER BY id DESC")
     hist_formatado = [{"ID": l[0], "Receita": l[1], "Meta": l[2], "Caixas": l[3], "Peseiro": l[4], "Batedor": l[5], "Obs": l[6], "Data": l[7]} for l in linhas_hist]
 
-    # Menu de Categorias na Lateral (RBAC)
     opcoes_menu = ["🏭 Linha de Produção"]
     if st.session_state["perfil"] in ["Mestre", "Gerente"]:
         opcoes_menu.append("📋 Gestão da Fila")
@@ -333,7 +331,6 @@ else:
         st.session_state.update({"autenticado": False, "usuario_logado": None, "perfil": None})
         st.rerun()
 
-    # ROTEAMENTO DAS TELAS
     if menu_selecionado == "🏭 Linha de Produção":
         painel_fabrica(matriz_receitas, fila, hist_formatado, st.session_state["usuario_logado"])
 
@@ -437,13 +434,24 @@ else:
             df_ing = st.data_editor(df_vazio, num_rows="dynamic", use_container_width=True)
             
             if st.form_submit_button("💾 Salvar Ficha Técnica", type="primary"):
-                formula = {str(r["Ingrediente"]).strip(): float(r["Quantidade"]) for _, r in df_ing.iterrows() if str(r["Ingrediente"]).strip() != "" and float(r["Quantidade"]) > 0}
+                formula = {}
+                for _, r in df_ing.iterrows():
+                    ing_str = str(r["Ingrediente"]).strip() if pd.notna(r.get("Ingrediente")) else ""
+                    qtd_raw = r.get("Quantidade")
+                    try:
+                        qtd_val = float(qtd_raw) if pd.notna(qtd_raw) and str(qtd_raw).strip() != "" else 0.0
+                    except (ValueError, TypeError):
+                        qtd_val = 0.0
+                    
+                    if ing_str != "" and qtd_val > 0:
+                        formula[ing_str] = qtd_val
+
                 if nome and und_nome and formula and sku:
                     executar_query("INSERT OR REPLACE INTO receitas (nome, ingredientes, und_nome, und_peso, modo_preparo, sku) VALUES (?, ?, ?, ?, ?, ?)", (nome, json.dumps(formula), und_nome, und_peso, modo_preparo, sku.upper()))
                     st.success("Ficha Técnica cadastrada com sucesso!")
                     st.rerun()
                 else: 
-                    st.error("Preencha SKU, Nome e ingredientes.")
+                    st.error("Preencha SKU, Nome e pelo menos um ingrediente com quantidade válida.")
 
         if matriz_receitas:
             st.markdown("---")
