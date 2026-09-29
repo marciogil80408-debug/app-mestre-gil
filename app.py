@@ -1,32 +1,47 @@
 import streamlit as st
 import pandas as pd
 
-# 1. Configuração da página (DEVE ser a primeira linha)
+# 1. Configuração da página (Sempre a primeira linha)
 st.set_page_config(layout="wide", page_title="App Mestre Gil")
 
-# 2. Criação do Menu Lateral
-st.sidebar.title("🏭 Navegação Mestre Gil")
+# 2. Criação do Menu Lateral Completo
+st.sidebar.title("🏭 ERP Mestre Gil")
 menu = st.sidebar.radio("Selecione o Módulo:", [
-    "📦 Gestão e Estoque", 
+    "📦 Controle de Estoque", 
+    "📝 Montar Ficha Técnica",
+    "🖨️ Imprimir Ficha / POP",
     "🧪 Motor Físico-Químico"
 ])
 
 # ==========================================
-# MÓDULO 1: SEU APLICATIVO ORIGINAL
+# TELA 1: ESTOQUE E PREÇOS
 # ==========================================
-if menu == "📦 Gestão e Estoque":
-    st.title("📦 Gestão de Produção e Estoque")
-    
-    # ---------------------------------------------------------
-    # 👇 COLE O SEU CÓDIGO ANTIGO INTEIRO EXATAMENTE AQUI 👇
-    # ---------------------------------------------------------
-    st.info("Espaço reservado para o seu código de estoque e fichas.")
-    
-    # ---------------------------------------------------------
+if menu == "📦 Controle de Estoque":
+    st.title("📦 Controle de Estoque e Custos")
+    st.info("👇 Cole aqui a parte do seu código que cadastra ingredientes e preços 👇")
+    # ...
 
 
 # ==========================================
-# MÓDULO 2: NOVO MOTOR DE BALANCEAMENTO
+# TELA 2: MODO EDIÇÃO (CRIAR RECEITAS E POP)
+# ==========================================
+elif menu == "📝 Montar Ficha Técnica":
+    st.title("➕ Montar Nova Ficha Técnica")
+    st.info("👇 Cole aqui aquela tela onde você digita o nome do produto, peso e o POP 👇")
+    # ...
+
+
+# ==========================================
+# TELA 3: MODO IMPRESSÃO (TELA LIMPA)
+# ==========================================
+elif menu == "🖨️ Imprimir Ficha / POP":
+    st.title("🖨️ Visualização para Impressão (Ctrl + P)")
+    st.info("👇 Cole aqui a tela limpa com os st.markdown() para imprimir 👇")
+    # ...
+
+
+# ==========================================
+# TELA 4: MOTOR DE BALANCEAMENTO
 # ==========================================
 elif menu == "🧪 Motor Físico-Químico":
     st.title("🧪 Motor de Balanceamento Físico-Químico")
