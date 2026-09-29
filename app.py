@@ -3,7 +3,7 @@ import os
 import sqlite3
 import pandas as pd
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
 
 # ==========================================
 # ⚙️ 1. CONFIGURAÇÃO GERAL
@@ -77,35 +77,23 @@ def carregar_estoque():
 init_db()
 
 # ==========================================
-# 🎨 3. MÓDULO DE ESTILIZAÇÃO CSS CLEAN
+# 🎨 3. MÓDULO DE ESTILIZAÇÃO CSS PREMIUM
 # ==========================================
 def aplicar_css_premium():
     st.markdown("""
         <style>
-        /* Botões Padrões Industriais */
         .stButton button[kind="secondary"] { border-radius: 8px; font-weight: bold; transition: all 0.3s ease; }
-        
-        /* 🔥 BOTÃO GIGANTE VERDE: "SINAL VERDE" */
-        .stButton button[kind="primary"] {
-            background: linear-gradient(135deg, #10b981, #059669) !important; color: white !important;
-            font-weight: 900 !important; border-radius: 8px !important; border: none !important;
-            padding: 0.8rem !important; font-size: 1.1em !important; box-shadow: 0 4px 10px rgba(16, 185, 129, 0.4) !important;
-        }
+        .stButton button[kind="primary"] { background: linear-gradient(135deg, #10b981, #059669) !important; color: white !important; font-weight: 900 !important; border-radius: 8px !important; border: none !important; padding: 0.8rem !important; font-size: 1.1em !important; box-shadow: 0 4px 10px rgba(16, 185, 129, 0.4) !important; }
         .stButton button[kind="primary"]:hover { background: linear-gradient(135deg, #059669, #047857) !important; transform: translateY(-2px); }
-
-        /* LAPIDAÇÃO DA LOGO E CHECKBOXES DA FÁBRICA */
+        .btn-cancelar button { background: #ef4444 !important; color: white !important; }
+        .btn-cancelar button:hover { background: #dc2626 !important; }
         [data-testid="stImage"] img { border-radius: 15px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3); }
         input[type="checkbox"] { transform: scale(1.5); cursor: pointer; }
         [data-testid="stCheckbox"] span[data-baseweb="checkbox"] > div { border: 2px solid #60a5fa !important; border-radius: 4px !important; }
-        
-        /* Design Clean para os Painéis */
         .ficha-box { background-color: rgba(30, 41, 59, 0.5); border: 2px solid #3b82f6; border-radius: 12px; padding: 25px; margin-bottom: 25px; }
         .passo-passo-box { background-color: rgba(17, 24, 39, 0.7); border-left: 4px solid #10b981; padding: 15px; border-radius: 6px; font-family: monospace; color: #34d399; }
-        
-        /* Tabela Anvisa Branca Oficial */
         .anvisa-table { width: 100%; max-width: 500px; border-collapse: collapse; font-family: Arial, sans-serif; background-color: white !important; color: black !important; margin: 0 auto; border: 2px solid black; }
-        .anvisa-table th, .anvisa-table td, .anvisa-table span, .anvisa-table div { color: black !important; background-color: white !important; }
-        .anvisa-table th, .anvisa-table td { border-bottom: 1px solid black; padding: 6px 4px; text-align: left; font-size: 14px; }
+        .anvisa-table th, .anvisa-table td { color: black !important; background-color: white !important; border-bottom: 1px solid black; padding: 6px 4px; text-align: left; font-size: 14px; }
         .anvisa-table th { font-weight: 900; border-bottom: 2px solid black; }
         .anvisa-header { text-align: center; font-weight: 900; font-size: 20px; padding: 10px 0; border-bottom: 5px solid black; }
         .anvisa-sub { font-size: 12px; font-weight: bold; border-bottom: 1px solid black; padding: 4px; }
@@ -121,7 +109,7 @@ def aplicar_css_premium():
     st.markdown("---")
 
 # ==========================================
-# 👑 4. MÓDULO: ROTEADOR DE TELAS INTELIGENTES (RBAC)
+# 👑 4. MÓDULO: ROTEADOR DE TELAS (ADMIN)
 # ==========================================
 def renderizar_painel_adm(matriz_receitas, fila_producao, estoque_atual, perfil):
     st.title("👑 Painel de Inteligência")
@@ -142,13 +130,11 @@ def renderizar_painel_adm(matriz_receitas, fila_producao, estoque_atual, perfil)
     if "🏭 Gestão da Fila" in abas_disponiveis:
         with tabs[tab_idx]:
             col1, col2 = st.columns([1.2, 1])
-            
             with col1:
                 st.subheader("⚙️ Enviar Ordem de Produção")
                 if not matriz_receitas:
                     st.info("Cadastre receitas no Cofre de P&D primeiro.")
                 else:
-                    # Uso de st.form para organizar visualmente o envio da ordem
                     with st.form("form_ordem", border=True):
                         lista_produtos = [f"[{v['sku']}] {k}" for k, v in matriz_receitas.items()]
                         selecao = st.selectbox("Selecione o Produto (SKU):", lista_produtos)
@@ -159,9 +145,7 @@ def renderizar_painel_adm(matriz_receitas, fila_producao, estoque_atual, perfil)
                         with c_batidas: batidas_qtd = st.number_input("Quantas Batidas?", min_value=1, value=1, step=1)
                         
                         instrucao_envase = st.text_input("Instruções (Opcional):", placeholder="Ex: Rende 30 caixas")
-                        
-                        submit_ordem = st.form_submit_button("🚀 Enviar para a Fábrica", type="primary")
-                        if submit_ordem:
+                        if st.form_submit_button("🚀 Enviar para a Fábrica", type="primary"):
                             executar_query("INSERT INTO fila_producao (receita, meta_kg, status, instrucao, batidas_total) VALUES (?, ?, 'Pendente', ?, ?)", (receita_escolhida, meta_escolhida, instrucao_envase, batidas_qtd))
                             st.rerun()
             
@@ -174,30 +158,54 @@ def renderizar_painel_adm(matriz_receitas, fila_producao, estoque_atual, perfil)
                         with st.container(border=True):
                             st.markdown(f"**#{idx + 1} | {lote['Receita']}**")
                             st.caption(f"🎯 {lote['Batidas']} Batidas de {lote['Meta_Kg']}kg")
-                            if idx > 0:
-                                if st.button(f"⬆️ Priorizar Lote #{idx+1}", key=f"prio_{lote['ID']}"):
+                            
+                            c_prio, c_canc = st.columns(2)
+                            with c_prio:
+                                if idx > 0 and st.button(f"⬆️ Priorizar", key=f"prio_{lote['ID']}", use_container_width=True):
                                     fila_producao.remove(lote)
                                     fila_producao.insert(0, lote)
                                     executar_query("DELETE FROM fila_producao")
                                     for l in fila_producao: executar_query("INSERT INTO fila_producao (receita, meta_kg, status, instrucao, batidas_total) VALUES (?, ?, ?, ?, ?)", (l["Receita"], l["Meta_Kg"], l["Status"], l["Instrucao"], l["Batidas"]))
                                     st.rerun()
+                            with c_canc:
+                                st.markdown('<div class="btn-cancelar">', unsafe_allow_html=True)
+                                if st.button(f"🗑️ Cancelar", key=f"canc_{lote['ID']}", use_container_width=True):
+                                    executar_query("DELETE FROM fila_producao WHERE id = ?", (lote['ID'],))
+                                    st.rerun()
+                                st.markdown('</div>', unsafe_allow_html=True)
         tab_idx += 1
 
     if "📦 Estoque" in abas_disponiveis:
         with tabs[tab_idx]:
-            st.subheader("📦 Gestão de Estoque e Preços")
-            ingredientes_unicos = set()
-            for rec in matriz_receitas.values():
-                for ing in rec["ingredientes"].keys(): ingredientes_unicos.add(ing)
-            for ing in ingredientes_unicos:
-                if ing not in estoque_atual: executar_query("INSERT INTO estoque (ingrediente, custo_kg, qtd_atual_kg) VALUES (?, 0.0, 0.0)", (ing,))
+            c_lancamento, c_tabela = st.columns([1, 1.5])
             
-            df_estoque = pd.DataFrame([{"Insumo": k, "Custo (R$/Kg)": v["custo_kg"], "Estoque (Kg)": v["qtd_atual_kg"]} for k, v in carregar_estoque().items()])
-            df_editado = st.data_editor(df_estoque, hide_index=True, use_container_width=True)
-            if st.button("💾 Salvar Estoque", type="primary"):
-                for _, row in df_editado.iterrows(): executar_query("UPDATE estoque SET custo_kg = ?, qtd_atual_kg = ? WHERE ingrediente = ?", (float(row["Custo (R$/Kg)"]), float(row["Estoque (Kg)"]), row["Insumo"]))
-                st.success("Estoque atualizado!")
-                st.rerun()
+            # ATUALIZAÇÃO 2: Lançamento de Notas Fiscais (Kardex Simplificado)
+            with c_lancamento:
+                st.subheader("📥 Lançar Entrada (Compra)")
+                ingredientes_unicos = set(ing for rec in matriz_receitas.values() for ing in rec["ingredientes"].keys())
+                for ing in ingredientes_unicos:
+                    if ing not in estoque_atual: executar_query("INSERT INTO estoque (ingrediente, custo_kg, qtd_atual_kg) VALUES (?, 0.0, 0.0)", (ing,))
+                
+                with st.form("form_entrada", border=True):
+                    ing_selecionado = st.selectbox("Selecione o Insumo Comprado:", sorted(list(estoque_atual.keys())))
+                    qtd_comprada = st.number_input("Quantidade Comprada (Kg):", min_value=0.1, value=10.0, step=1.0)
+                    novo_custo = st.number_input("Novo Preço Pago (R$ por Kg):", min_value=0.01, value=estoque_atual.get(ing_selecionado, {}).get("custo_kg", 0.0), step=0.5)
+                    
+                    if st.form_submit_button("➕ Registrar Estoque", type="primary"):
+                        qtd_antiga = estoque_atual.get(ing_selecionado, {}).get("qtd_atual_kg", 0.0)
+                        nova_qtd_total = qtd_antiga + qtd_comprada
+                        executar_query("UPDATE estoque SET qtd_atual_kg = ?, custo_kg = ? WHERE ingrediente = ?", (nova_qtd_total, novo_custo, ing_selecionado))
+                        st.success(f"Entrada de {qtd_comprada}kg de {ing_selecionado} registrada!")
+                        st.rerun()
+
+            with c_tabela:
+                st.subheader("📦 Posição Atual e Ajustes")
+                df_estoque = pd.DataFrame([{"Insumo": k, "Custo (R$/Kg)": v["custo_kg"], "Estoque (Kg)": v["qtd_atual_kg"]} for k, v in carregar_estoque().items()])
+                df_editado = st.data_editor(df_estoque, hide_index=True, use_container_width=True)
+                if st.button("💾 Salvar Ajuste Manual"):
+                    for _, row in df_editado.iterrows(): executar_query("UPDATE estoque SET custo_kg = ?, qtd_atual_kg = ? WHERE ingrediente = ?", (float(row["Custo (R$/Kg)"]), float(row["Estoque (Kg)"]), row["Insumo"]))
+                    st.success("Tabela ajustada!")
+                    st.rerun()
         tab_idx += 1
 
     if "💰 Precificação (CMV)" in abas_disponiveis:
@@ -237,43 +245,48 @@ def renderizar_painel_adm(matriz_receitas, fila_producao, estoque_atual, perfil)
 
     if "📊 Dashboards" in abas_disponiveis:
         with tabs[tab_idx]:
-            st.subheader("📊 Fechamento e Resultados")
-            df_hist = pd.read_sql_query("SELECT receita, meta_kg, caixas, batedor, data_hora FROM historico", sqlite3.connect(DB_NAME))
+            st.subheader("📊 Performance e Fechamentos")
+            df_hist = pd.read_sql_query("SELECT receita as 'Produto', meta_kg as 'Kg Produzido', caixas as 'Unid. Envasadas', batedor as 'Operador', data_hora as 'Data' FROM historico ORDER BY data_hora DESC", sqlite3.connect(DB_NAME))
+            
             if not df_hist.empty:
-                df_hist['Data_Curta'] = pd.to_datetime(df_hist['data_hora']).dt.strftime('%Y-%m-%d')
-                df_hoje = df_hist[df_hist['Data_Curta'] == datetime.now().strftime("%Y-%m-%d")]
+                df_hist['Data_Formatada'] = pd.to_datetime(df_hist['Data']).dt.date
                 
+                # ATUALIZAÇÃO 3: Filtro de Datas no Dashboard para evitar travamento
+                filtro_data = st.radio("Selecione o Período para Análise:", ["Hoje", "Últimos 7 Dias", "Este Mês", "Todo o Histórico"], horizontal=True)
+                hoje = datetime.now().date()
+                
+                if filtro_data == "Hoje": df_filtrado = df_hist[df_hist['Data_Formatada'] == hoje]
+                elif filtro_data == "Últimos 7 Dias": df_filtrado = df_hist[df_hist['Data_Formatada'] >= (hoje - timedelta(days=7))]
+                elif filtro_data == "Este Mês": df_filtrado = df_hist[df_hist['Data_Formatada'] >= hoje.replace(day=1)]
+                else: df_filtrado = df_hist
+
                 with st.container(border=True):
-                    st.markdown("### 🏆 Turno de Hoje")
                     c1, c2, c3 = st.columns(3)
-                    c1.metric("Kg Batidos", f"{df_hoje['meta_kg'].sum():.1f} kg")
-                    c2.metric("Unidades Envasadas", int(df_hoje['caixas'].sum()))
-                    c3.metric("Lotes Fechados", len(df_hoje))
+                    c1.metric("Volume Produzido (Kg)", f"{df_filtrado['Kg Produzido'].sum():.1f} kg")
+                    c2.metric("Total Envasado (Unidades)", int(df_filtrado['Unid. Envasadas'].sum()))
+                    c3.metric("Lotes Finalizados", len(df_filtrado))
                 
-                st.markdown("### 📈 Histórico Geral")
-                st.dataframe(df_hist.drop(columns=['Data_Curta']), use_container_width=True)
+                st.markdown(f"### 📈 Relatório Detalhado ({filtro_data})")
+                st.dataframe(df_filtrado.drop(columns=['Data_Formatada']), use_container_width=True)
+            else:
+                st.info("Nenhuma produção registrada na fábrica ainda.")
         tab_idx += 1
             
     if "🔐 Cofre P&D" in abas_disponiveis:
         with tabs[tab_idx]:
             st.subheader("🔐 Cofre de Formulações (P&D)")
-            
             with st.form("form_nova_receita", border=True):
                 st.markdown("### ➕ Nova Formulação")
                 c1, c2 = st.columns([1, 3])
                 with c1: sku = st.text_input("SKU (Ex: ACAI-01):")
                 with c2: nome = st.text_input("Nome Comercial do Sabor:")
-                
                 c3, c4 = st.columns(2)
                 with c3: und_nome = st.text_input("Tipo Embalagem (Ex: Caixa 5L):")
                 with c4: und_peso = st.number_input("Peso (kg):", value=2.500, format="%.3f")
-                
                 modo_preparo = st.text_area("Procedimento Operacional Padrão:")
-                
                 st.markdown("**Matriz de Ingredientes (Proporções):**")
                 df_vazio = pd.DataFrame([{"Ingrediente": "", "Quantidade": 0.0} for _ in range(12)])
                 df_ing = st.data_editor(df_vazio, num_rows="dynamic", use_container_width=True)
-                
                 if st.form_submit_button("💾 Blindar Formulação", type="primary"):
                     formula = {str(r["Ingrediente"]).strip(): float(r["Quantidade"]) for _, r in df_ing.iterrows() if str(r["Ingrediente"]).strip() != "" and float(r["Quantidade"]) > 0}
                     if nome and und_nome and formula and sku:
@@ -288,7 +301,7 @@ def renderizar_painel_adm(matriz_receitas, fila_producao, estoque_atual, perfil)
                     with st.expander(f"📖 [{dados['sku']}] {rec}"):
                         st.json(dados["ingredientes"])
                         st.info(dados["modo_preparo"])
-                        if st.button(f"🗑️ Excluir", key=f"del_{rec}"):
+                        if st.button(f"🗑️️ Excluir", key=f"del_{rec}"):
                             executar_query("DELETE FROM receitas WHERE nome = ?", (rec,))
                             st.rerun()
         tab_idx += 1
@@ -300,28 +313,17 @@ def renderizar_painel_adm(matriz_receitas, fila_producao, estoque_atual, perfil)
                 rec_selec = st.selectbox("Selecione a Formulação:", list(matriz_receitas.keys()))
                 salvos = carregar_dados_tabela(f"SELECT dados_json FROM tabela_nutricional WHERE receita = '{rec_selec}'")
                 d_salvos = json.loads(salvos[0][0]) if salvos else {}
-                
                 c1, c2 = st.columns(2)
                 with c1: porcao = st.number_input("Porção (g):", value=d_salvos.get("porcao_g", 60.0))
                 with c2: caseira = st.text_input("Medida Caseira:", value=d_salvos.get("medida_caseira", "1 bola"))
-                
-                df_nutri = pd.DataFrame([
-                    {"Nutriente": "Energia (kcal)", "Valor/100g": d_salvos.get("energia", 0.0)},
-                    {"Nutriente": "Carboidratos (g)", "Valor/100g": d_salvos.get("carbo", 0.0)},
-                    {"Nutriente": "Açúcares Adicionados (g)", "Valor/100g": d_salvos.get("acucar_add", 0.0)},
-                    {"Nutriente": "Proteínas (g)", "Valor/100g": d_salvos.get("prot", 0.0)},
-                    {"Nutriente": "Gorduras Totais (g)", "Valor/100g": d_salvos.get("gord_tot", 0.0)},
-                    {"Nutriente": "Sódio (mg)", "Valor/100g": d_salvos.get("sodio", 0.0)},
-                ])
+                df_nutri = pd.DataFrame([{"Nutriente": "Energia (kcal)", "Valor/100g": d_salvos.get("energia", 0.0)}, {"Nutriente": "Carboidratos (g)", "Valor/100g": d_salvos.get("carbo", 0.0)}, {"Nutriente": "Açúcares Adicionados (g)", "Valor/100g": d_salvos.get("acucar_add", 0.0)}, {"Nutriente": "Proteínas (g)", "Valor/100g": d_salvos.get("prot", 0.0)}, {"Nutriente": "Gorduras Totais (g)", "Valor/100g": d_salvos.get("gord_tot", 0.0)}, {"Nutriente": "Sódio (mg)", "Valor/100g": d_salvos.get("sodio", 0.0)}, ])
                 df_ed = st.data_editor(df_nutri, hide_index=True, use_container_width=True)
-                
                 if st.button("💾 Gerar Rótulo", type="primary"):
                     val = df_ed["Valor/100g"].tolist()
                     j = json.dumps({"porcao_g": porcao, "medida_caseira": caseira, "energia": val[0], "carbo": val[1], "acucar_tot":0, "acucar_add": val[2], "prot": val[3], "gord_tot": val[4], "gord_sat":0, "gord_trans":0, "fibra":0, "sodio": val[5]})
                     executar_query("INSERT OR REPLACE INTO tabela_nutricional (receita, dados_json) VALUES (?, ?)", (rec_selec, j))
                     st.success("Tabela gerada.")
                     st.rerun()
-
                 if d_salvos:
                     st.markdown("<br><div style='background-color: white; padding: 20px; border-radius: 8px;'><table class='anvisa-table'><tr><td colspan='2' class='anvisa-header'>INFORMAÇÃO NUTRICIONAL</td></tr></table></div>", unsafe_allow_html=True)
         tab_idx += 1
@@ -335,7 +337,6 @@ def renderizar_painel_adm(matriz_receitas, fila_producao, estoque_atual, perfil)
                 with c2: n_login = st.text_input("Login:")
                 with c3: n_senha = st.text_input("Senha:", type="password")
                 with c4: n_perfil = st.selectbox("Perfil:", ["Operador", "Financeiro", "Gerente", "Mestre"])
-                
                 if st.form_submit_button("➕ Cadastrar", type="primary"):
                     if n_nome and n_login and n_senha:
                         executar_query("INSERT INTO usuarios (login, nome, senha, perfil) VALUES (?, ?, ?, ?)", (n_login.lower().strip(), n_nome, n_senha, n_perfil))
@@ -355,7 +356,6 @@ def painel_fabrica(matriz_receitas, fila_producao, hist_concluidos, usuario):
 
     lote_atual = fila_producao[0]
     rec_dados = matriz_receitas.get(lote_atual["Receita"], {"ingredientes": {"Base": 1.0}, "und_nome": "Und", "und_peso": 1.0, "modo_preparo": "Siga o POP.", "sku": "S/N"})
-    
     peso_por_batida = lote_atual['Meta_Kg']
     batidas = lote_atual['Batidas']
 
@@ -379,7 +379,6 @@ def painel_fabrica(matriz_receitas, fila_producao, hist_concluidos, usuario):
         for ing, prop in rec_dados["ingredientes"].items():
             val = (prop / soma_prop) * peso_por_batida
             txt = f"{(val * 1000):.1f} g" if val < 1.0 else f"{val:.3f} kg"
-            
             c1, c2, c3 = st.columns([2, max(1.5, batidas*0.5), 1.2])
             with c1: st.markdown(f"<div style='font-weight: bold; padding-top: 10px; font-size: 1.1em;'>• {ing}</div>", unsafe_allow_html=True)
             with c2:
@@ -413,7 +412,6 @@ def painel_fabrica(matriz_receitas, fila_producao, hist_concluidos, usuario):
             if b_real < batidas:
                 v = carregar_dados_tabela(f"SELECT perfil FROM usuarios WHERE senha='{senha_auth}' AND perfil IN ('Mestre', 'Gerente')")
                 if not v: auth = False
-
             if not auth: st.error("❌ Assinatura inválida.")
             else:
                 if all(st.session_state.get(k, False) for k in chaves) or b_real < batidas:
@@ -445,10 +443,20 @@ if not st.session_state["autenticado"]:
                     st.rerun()
                 else: st.error("Credenciais inválidas.")
 else:
-    st.sidebar.markdown(f"👤 **{st.session_state['usuario_logado']}**\n\n🛡️ Perfil: {st.session_state['perfil']}")
+    # ATUALIZAÇÃO 4: SIDEBAR PREMIUM
+    st.sidebar.markdown(f"""
+        <div style="text-align:center; padding: 10px; background-color: #0f172a; border-radius: 10px; border: 1px solid #3b82f6; margin-bottom: 15px;">
+            <h2 style="color: #60a5fa; margin:0;">🏭 MESTRE GIL</h2>
+        </div>
+    """, unsafe_allow_html=True)
+    
+    cor_badge = "#f59e0b" if st.session_state['perfil'] in ["Mestre", "Gerente"] else "#3b82f6"
+    st.sidebar.markdown(f"<div style='background-color: {cor_badge}; color: white; padding: 5px; border-radius: 5px; text-align: center; font-weight: bold;'>🛡️ NÍVEL: {st.session_state['perfil'].upper()}</div>", unsafe_allow_html=True)
+    st.sidebar.markdown(f"<div style='text-align: center; margin-top: 10px; font-size: 1.1em; color: #e2e8f0;'>👤 <b>{st.session_state['usuario_logado']}</b></div>", unsafe_allow_html=True)
+    
     st.sidebar.divider()
-    if st.sidebar.button("🔄 Sincronizar"): st.rerun()
-    if st.sidebar.button("🚪 Sair"):
+    if st.sidebar.button("🔄 Sincronizar Tudo"): st.rerun()
+    if st.sidebar.button("🚪 Encerrar Turno (Sair)"):
         st.session_state.update({"autenticado": False, "usuario_logado": None, "perfil": None})
         st.rerun()
 
