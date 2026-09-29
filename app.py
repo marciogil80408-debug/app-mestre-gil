@@ -1,50 +1,107 @@
 import streamlit as st
+import pandas as pd
 
-# Criando duas abas na sua tela
-aba_editar, aba_imprimir = st.tabs(["📝 Modo Edição", "🖨️ Visualizar para Impressão"])
+st.set_page_config(layout="wide")
+st.title("🧪 Motor de Balanceamento Físico-Químico")
 
-with aba_editar:
-    st.subheader("➕ Montar Nova Ficha Técnica")
-    
-    col1, col2 = st.columns(2)
-    with col1:
-        sku = st.text_input("Cód. SKU (Ex: ACAI-01):")
-        embalagem = st.text_input("Embalagem de Venda (Ex: Caixa 5L):")
-    with col2:
-        nome_comercial = st.text_input("Nome Comercial da Formulação:")
-        peso = st.number_input("Peso Líquido da Embalagem (kg):", value=2.500)
-    
-    # Texto do POP mais curto e direto
-    pop_padrao_curto = """
-1. PREPARO: Sanitizar equipamentos (200ppm). Pesar todos os ingredientes na balança de precisão.
-2. MISTURA: Adicionar líquidos na tina/liquidificador. Incorporar os pós lentamente sob agitação.
-3. PRODUÇÃO: Inserir a calda na produtora. Bater até atingir a textura ideal e extrair a -6°C.
-4. ENVASE: Envasar, selar, colocar lote/validade e enviar imediatamente para o freezer a -25°C.
-    """.strip()
-    
-    pop_texto = st.text_area("Procedimento Operacional Padrão (POP):", value=pop_padrao_curto, height=150)
-    
-    st.button("💾 Salvar Ficha Técnica no Cofre")
+# 1. Banco de Dados Técnico (Simulado) - Valores em % (por 100g)
+# PAC = Poder Anticongelante (Relativo à Sacarose = 100)
+# POD = Poder Adoçante (Relativo à Sacarose = 100)
+BASE_INGREDIENTES = {
+    "Água Filtrada": {"ST": 0.0, "Gordura": 0.0, "SNG": 0.0, "PAC": 0, "POD": 0},
+    "Leite Integral (Fluido)": {"ST": 12.0, "Gordura": 3.0, "SNG": 9.0, "PAC": 0, "POD": 0},
+    "Leite em Pó Integral": {"ST": 97.0, "Gordura": 26.0, "SNG": 71.0, "PAC": 0, "POD": 0},
+    "Açúcar (Sacarose)": {"ST": 100.0, "Gordura": 0.0, "SNG": 0.0, "PAC": 100, "POD": 100},
+    "Glucose em Pó (DE 40)": {"ST": 95.0, "Gordura": 0.0, "SNG": 0.0, "PAC": 45, "POD": 50},
+    "Maltodextrina": {"ST": 95.0, "Gordura": 0.0, "SNG": 0.0, "PAC": 15, "POD": 10},
+    "Gordura de Palma": {"ST": 100.0, "Gordura": 100.0, "SNG": 0.0, "PAC": 0, "POD": 0},
+    "Emustab / Estabilizante": {"ST": 100.0, "Gordura": 0.0, "SNG": 0.0, "PAC": 0, "POD": 0},
+}
 
-with aba_imprimir:
-    # Esta aba fica limpa, sem campos de digitação, ideal para imprimir (Ctrl+P)
-    st.markdown(f"## 🏭 FICHA TÉCNICA DE PRODUÇÃO")
+# 2. Interface de Entrada da Receita
+st.subheader("📝 Montagem da Calda")
+col1, col2 = st.columns([2, 1])
+
+with col1:
+    # Seleção múltipla para escolher o que vai na receita
+    ingredientes_selecionados = st.multiselect(
+        "Selecione os ingredientes da formulação:",
+        options=list(BASE_INGREDIENTES.keys()),
+        default=["Água Filtrada", "Leite em Pó Integral", "Açúcar (Sacarose)", "Emustab / Estabilizante"]
+    )
+
+with col2:
+    st.info("Digite o peso em KG de cada ingrediente.")
+
+# 3. Coleta de Pesos
+pesos_receita = {}
+st.write("---")
+cols_pesos = st.columns(4) # Divide em 4 colunas para não ficar uma lista gigante
+
+for i, ingrediente in enumerate(ingredientes_selecionados):
+    with cols_pesos[i % 4]:
+        # Coleta o peso em kg
+        peso = st.number_input(f"{ingrediente} (kg)", min_value=0.0, value=0.0, step=0.1, key=ingrediente)
+        pesos_receita[ingrediente] = peso
+
+# 4. Algoritmo de Cálculo do Balanço de Massa
+peso_total_calda = sum(pesos_receita.values())
+
+if peso_total_calda > 0:
     st.markdown("---")
+    st.subheader("📊 Análise Físico-Química da Calda")
     
-    colA, colB = st.columns(2)
-    with colA:
-        st.markdown(f"**SKU:** {sku if sku else '---'}")
-        st.markdown(f"**Produto:** {nome_comercial if nome_comercial else '---'}")
-    with colB:
-        st.markdown(f"**Embalagem:** {embalagem if embalagem else '---'}")
-        st.markdown(f"**Peso/Rendimento:** {peso} kg")
+    # Variáveis acumuladoras
+    total_st = 0.0
+    total_gordura = 0.0
+    total_sng = 0.0
+    total_pac = 0.0
+    total_pod = 0.0
     
-    st.markdown("---")
-    st.markdown("### 📋 Procedimento Operacional Padrão (POP)")
+    for ing, peso_kg in pesos_receita.items():
+        # Regra de 3: (Peso do ingrediente * Porcentagem do componente) / 100
+        prop = BASE_INGREDIENTES[ing]
+        total_st += (peso_kg * prop["ST"]) / 100
+        total_gordura += (peso_kg * prop["Gordura"]) / 100
+        total_sng += (peso_kg * prop["SNG"]) / 100
+        total_pac += (peso_kg * prop["PAC"]) / 100
+        total_pod += (peso_kg * prop["POD"]) / 100
     
-    # O st.markdown vai renderizar o texto exatamente como você formatar, ótimo para leitura
-    st.markdown(pop_texto)
+    # Cálculo das porcentagens finais na calda
+    perc_st = (total_st / peso_total_calda) * 100
+    perc_gordura = (total_gordura / peso_total_calda) * 100
+    perc_sng = (total_sng / peso_total_calda) * 100
     
-    st.markdown("---")
-    st.markdown("### 🧬 Matriz de Ingredientes")
-    st.info("Aqui entrará a sua tabela de ingredientes gerada pelo sistema.")
+    # PAC e POD geralmente são calculados em índice absoluto ou % em relação à água/sólidos. 
+    # Aqui usamos o índice direto da mistura.
+    indice_pac = (total_pac / peso_total_calda) * 100
+    indice_pod = (total_pod / peso_total_calda) * 100
+
+    # 5. Exibição dos Resultados com Alertas Reológicos
+    metrica1, metrica2, metrica3, metrica4 = st.columns(4)
+    
+    with metrica1:
+        st.metric("Peso Total da Calda", f"{peso_total_calda:.3f} kg")
+    
+    with metrica2:
+        st.metric("Sólidos Totais (ST)", f"{perc_st:.1f}%")
+        if perc_st < 36:
+            st.error("⚠️ Baixo ST. Risco de formação de cristais de gelo.")
+        elif perc_st > 42:
+            st.warning("⚠️ Alto ST. Risco de textura pesada/arenosa.")
+        else:
+            st.success("✅ ST Ideal.")
+
+    with metrica3:
+        st.metric("Gordura Total", f"{perc_gordura:.1f}%")
+        if perc_gordura < 6:
+            st.warning("⚠️ Gordura baixa. Pode faltar cremosidade.")
+            
+    with metrica4:
+        st.metric("SNG (Sól. Não-Gordurosos)", f"{perc_sng:.1f}%")
+        if perc_sng > 11:
+            st.error("⚠️ SNG Alto. Risco de arenosidade (cristalização da lactose).")
+
+    st.markdown(f"**Poder Anticongelante (PAC):** {indice_pac:.1f} | **Poder Adoçante (POD):** {indice_pod:.1f}")
+else:
+    st.warning("Adicione os pesos dos ingredientes para gerar o cálculo.")
