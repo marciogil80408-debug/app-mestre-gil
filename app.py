@@ -189,7 +189,12 @@ def renderizar_painel_adm(matriz_receitas, fila_producao, estoque_atual, perfil)
                 with st.form("form_entrada", border=True):
                     ing_selecionado = st.selectbox("Selecione o Insumo Comprado:", sorted(list(estoque_atual.keys())))
                     qtd_comprada = st.number_input("Quantidade Comprada (Kg):", min_value=0.1, value=10.0, step=1.0)
-                    novo_custo = st.number_input("Novo Preço Pago (R$ por Kg):", min_value=0.01, value=estoque_atual.get(ing_selecionado, {}).get("custo_kg", 0.0), step=0.5)
+                   novo_custo = st.number_input(
+    "Novo Preço Pago (R$ por Kg):", 
+    min_value=0.01, 
+    value=estoque_atual.get(ing_selecionado, {}).get("custo_kg", 0.01), 
+    step=0.5
+)
                     
                     if st.form_submit_button("➕ Registrar Estoque", type="primary"):
                         qtd_antiga = estoque_atual.get(ing_selecionado, {}).get("qtd_atual_kg", 0.0)
