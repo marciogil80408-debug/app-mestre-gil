@@ -143,6 +143,28 @@ def aplicar_css_premium():
         .anvisa-table th { font-weight: 900; border-bottom: 2px solid black; }
         .anvisa-header { text-align: center; font-weight: 900; font-size: 20px; padding: 10px 0; border-bottom: 5px solid black; }
         .anvisa-sub { font-size: 12px; font-weight: bold; border-bottom: 1px solid black; padding: 4px; }
+
+        /* Estilização para impressão direta */
+        @media print {
+            header, footer, [data-testid="stSidebar"], .stButton, nav, #MainMenu {
+                display: none !important;
+            }
+            body, .stApp {
+                background: white !important;
+                color: black !important;
+            }
+            .print-area {
+                width: 100% !important;
+                margin: 0 !important;
+                padding: 10px !important;
+                color: black !important;
+                background: white !important;
+                border: 2px solid black !important;
+            }
+            .print-area * {
+                color: black !important;
+            }
+        }
         </style>
     """, unsafe_allow_html=True)
 
@@ -419,21 +441,50 @@ else:
 
     elif menu_selecionado == "📝 Montar Ficha Técnica":
         st.title("📝 Montar Ficha Técnica & Formulação")
+        
+        # Gerenciamento de Edição no session_state
+        if "receita_em_edicao" not in st.session_state:
+            st.session_state["receita_em_edicao"] = None
+
+        ed_rec = st.session_state["receita_em_edicao"]
+        if ed_rec and ed_rec in matriz_receitas:
+            dados_ed = matriz_receitas[ed_rec]
+            v_sku = dados_ed["sku"]
+            v_nome = ed_rec
+            v_und = dados_ed["und_nome"]
+            v_peso = dados_ed["und_peso"]
+            v_modo = dados_ed["modo_preparo"]
+            itens_lista = [{"Ingrediente": k, "Quantidade": float(v)} for k, v in dados_ed["ingredientes"].items()]
+            while len(itens_lista) < 12:
+                itens_lista.append({"Ingrediente": "", "Quantidade": 0.0})
+            df_inicial = pd.DataFrame(itens_lista)
+            st.info(f"✏️ **Modo de Edição Ativo:** Editando a receita **{ed_rec}**")
+            if st.button("❌ Cancelar Edição"):
+                st.session_state["receita_em_edicao"] = None
+                st.rerun()
+        else:
+            v_sku = ""
+            v_nome = ""
+            v_und = "Caixa 5L"
+            v_peso = 2.500
+            v_modo = ""
+            df_inicial = pd.DataFrame([{"Ingrediente": "", "Quantidade": 0.0} for _ in range(12)])
+
         with st.form("form_nova_receita", border=True):
-            st.markdown("### ➕ Nova Ficha Técnica")
+            st.markdown("### ➕ Dados da Ficha Técnica")
             c1, c2 = st.columns([1, 3])
-            with c1: sku = st.text_input("SKU (Ex: GELATO-01):")
-            with c2: nome = st.text_input("Nome Comercial da Fórmula:")
+            with c1: sku = st.text_input("SKU (Ex: GELATO-01):", value=v_sku)
+            with c2: nome = st.text_input("Nome Comercial da Fórmula:", value=v_nome)
             c3, c4 = st.columns(2)
-            with c3: und_nome = st.text_input("Tipo Embalagem (Ex: Caixa 5L):")
-            with c4: und_peso = st.number_input("Peso por Embalagem (kg):", value=2.500, format="%.3f")
-            modo_preparo = st.text_area("Procedimento Operacional Padrão (POP):", placeholder="1. Adicionar líquidos no tanque...\n2. Incorporar pós...")
+            with c3: und_nome = st.text_input("Tipo Embalagem (Ex: Caixa 5L):", value=v_und)
+            with c4: und_peso = st.number_input("Peso por Embalagem (kg):", value=float(v_peso), format="%.3f")
+            modo_preparo = st.text_area("Procedimento Operacional Padrão (POP):", value=v_modo, placeholder="1. Adicionar líquidos no tanque...\n2. Incorporar pós...")
             
             st.markdown("**Composição de Ingredientes na Base:**")
-            df_vazio = pd.DataFrame([{"Ingrediente": "", "Quantidade": 0.0} for _ in range(12)])
-            df_ing = st.data_editor(df_vazio, num_rows="dynamic", use_container_width=True)
+            df_ing = st.data_editor(df_inicial, num_rows="dynamic", use_container_width=True)
             
-            if st.form_submit_button("💾 Salvar Ficha Técnica", type="primary"):
+            botao_label = "💾 Atualizar Ficha Técnica" if ed_rec else "💾 Salvar Ficha Técnica"
+            if st.form_submit_button(botao_label, type="primary"):
                 formula = {}
                 for _, r in df_ing.iterrows():
                     ing_str = str(r["Ingrediente"]).strip() if pd.notna(r.get("Ingrediente")) else ""
@@ -447,8 +498,11 @@ else:
                         formula[ing_str] = qtd_val
 
                 if nome and und_nome and formula and sku:
+                    if ed_rec and ed_rec != nome:
+                        executar_query("DELETE FROM receitas WHERE nome = ?", (ed_rec,))
                     executar_query("INSERT OR REPLACE INTO receitas (nome, ingredientes, und_nome, und_peso, modo_preparo, sku) VALUES (?, ?, ?, ?, ?, ?)", (nome, json.dumps(formula), und_nome, und_peso, modo_preparo, sku.upper()))
-                    st.success("Ficha Técnica cadastrada com sucesso!")
+                    st.session_state["receita_em_edicao"] = None
+                    st.success("Ficha Técnica salva com sucesso!")
                     st.rerun()
                 else: 
                     st.error("Preencha SKU, Nome e pelo menos um ingrediente com quantidade válida.")
@@ -460,31 +514,86 @@ else:
                 with st.expander(f"📖 [{dados['sku']}] {rec} ({dados['und_nome']})"):
                     st.json(dados["ingredientes"])
                     st.info(dados["modo_preparo"])
-                    if st.button(f"🗑 Excluir Fórmula", key=f"del_{rec}"):
-                        executar_query("DELETE FROM receitas WHERE nome = ?", (rec,))
-                        st.rerun()
+                    c_ed, c_ex = st.columns([1, 1])
+                    with c_ed:
+                        if st.button(f"✏️ Editar Fórmula", key=f"edit_{rec}"):
+                            st.session_state["receita_em_edicao"] = rec
+                            st.rerun()
+                    with c_ex:
+                        if st.button(f"🗑 Excluir Fórmula", key=f"del_{rec}"):
+                            executar_query("DELETE FROM receitas WHERE nome = ?", (rec,))
+                            if st.session_state.get("receita_em_edicao") == rec:
+                                st.session_state["receita_em_edicao"] = None
+                            st.rerun()
 
     elif menu_selecionado == "🖨️ Imprimir Ficha / POP":
         st.title("🖨️ Impressão de Ficha Técnica / Procedimento Padrão (POP)")
         if matriz_receitas:
-            rec_sel = st.selectbox("Selecione a Fórmula para Impressão:", list(matriz_receitas.keys()))
+            c_sel, c_peso = st.columns([2, 1])
+            with c_sel:
+                rec_sel = st.selectbox("Selecione a Fórmula para Impressão:", list(matriz_receitas.keys()))
             d = matriz_receitas[rec_sel]
-            peso_lote_print = st.number_input("Simular Peso Total da Batida (kg):", min_value=1.0, value=150.0, step=5.0)
+            with c_peso:
+                peso_lote_print = st.number_input("Peso Total da Batida (kg):", min_value=1.0, value=150.0, step=5.0)
             
             soma_p = sum(d["ingredientes"].values()) if sum(d["ingredientes"].values()) > 0 else 1
-            itens_print = []
+            linhas_html_tabela = ""
             for ing, q in d["ingredientes"].items():
                 peso_calc = (q / soma_p) * peso_lote_print
-                itens_print.append({"Ingrediente": ing, "Peso Calculado": f"{peso_calc*1000:.0f} g" if peso_calc < 1.0 else f"{peso_calc:.3f} kg"})
+                txt_p = f"{peso_calc*1000:.0f} g" if peso_calc < 1.0 else f"{peso_calc:.3f} kg"
+                linhas_html_tabela += f"<tr><td style='border: 1px solid black; padding: 8px;'><b>{ing}</b></td><td style='border: 1px solid black; padding: 8px; text-align: right;'><b>{txt_p}</b></td></tr>"
             
-            with st.container(border=True):
-                st.markdown(f"## 📋 FICHA TÉCNICA: [{d['sku']}] {rec_sel}")
-                st.markdown(f"**Lote Calculado:** `{peso_lote_print} kg` | **Embalagem:** `{d['und_nome']} ({d['und_peso']} kg)`")
-                st.markdown("---")
-                st.markdown("### Ingredientes para o Tanque:")
-                st.table(pd.DataFrame(itens_print))
-                st.markdown("### Procedimento Operacional Padrão (POP):")
-                st.info(d["modo_preparo"])
+            # Botão Direto para a Impressora usando JavaScript window.print()
+            st.components.v1.html("""
+                <button onclick="window.print()" style="
+                    background: #10b981;
+                    color: white;
+                    font-size: 16px;
+                    font-weight: bold;
+                    padding: 12px 24px;
+                    border: none;
+                    border-radius: 8px;
+                    cursor: pointer;
+                    width: 100%;
+                    box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+                ">
+                    🖨️ ENVIAR DIRETO PARA A IMPRESSORA (IMPRIMIR AGORA)
+                </button>
+            """, height=65)
+
+            st.markdown(f"""
+                <div class="print-area" style="background-color: white; color: black; padding: 25px; border-radius: 8px; border: 2px solid #000; margin-top: 15px;">
+                    <div style="text-align: center; border-bottom: 3px solid black; padding-bottom: 10px; margin-bottom: 15px;">
+                        <h2 style="margin: 0; color: black; text-transform: uppercase;">ORDEM DE PRODUÇÃO / FICHA TÉCNICA</h2>
+                        <h1 style="margin: 5px 0; color: black;">[{d['sku']}] {rec_sel}</h1>
+                        <p style="margin: 0; font-size: 14px; color: black;">Data/Hora de Emissão: {datetime.now().strftime('%d/%m/%Y %H:%M')}</p>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; font-size: 16px; margin-bottom: 15px; color: black;">
+                        <span><b>Lote Programado:</b> {peso_lote_print:.1f} kg</span>
+                        <span><b>Embalagem Padrão:</b> {d['und_nome']} ({d['und_peso']} kg)</span>
+                        <span><b>Rendimento Estimado:</b> ~{int(peso_lote_print / d['und_peso'])} unidades</span>
+                    </div>
+                    <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; color: black;">
+                        <thead>
+                            <tr style="background-color: #e2e8f0; color: black;">
+                                <th style="border: 1px solid black; padding: 8px; text-align: left;">Insumo / Ingrediente</th>
+                                <th style="border: 1px solid black; padding: 8px; text-align: right;">Peso Calculado</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {linhas_html_tabela}
+                        </tbody>
+                    </table>
+                    <div style="border: 1px solid black; padding: 12px; border-radius: 4px; margin-bottom: 25px; color: black;">
+                        <h3 style="margin-top: 0; color: black;">Procedimento Operacional Padrão (POP):</h3>
+                        <p style="white-space: pre-line; margin-bottom: 0; color: black;">{d['modo_preparo']}</p>
+                    </div>
+                    <div style="display: flex; justify-content: space-around; margin-top: 40px; padding-top: 20px; border-top: 1px dashed black; color: black;">
+                        <div style="text-align: center;">__________________________________<br><b>Assinatura do Peseiro</b></div>
+                        <div style="text-align: center;">__________________________________<br><b>Assinatura do Batedor</b></div>
+                    </div>
+                </div>
+            """, unsafe_allow_html=True)
         else:
             st.info("Cadastre fórmulas primeiro.")
 
