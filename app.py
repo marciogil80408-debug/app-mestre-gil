@@ -190,7 +190,6 @@ def renderizar_painel_adm(matriz_receitas, fila_producao, estoque_atual, perfil)
                     ing_selecionado = st.selectbox("Selecione o Insumo Comprado:", opcoes_ingredientes)
                     qtd_comprada = st.number_input("Quantidade Comprada (Kg):", min_value=0.1, value=10.0, step=1.0)
                     
-                    # CORREÇÃO DO ERRO: min_value agora é 0.0 para aceitar o estoque zerado inicial!
                     custo_atual_db = estoque_atual.get(ing_selecionado, {}).get("custo_kg", 0.0) if estoque_atual else 0.0
                     novo_custo = st.number_input("Novo Preço Pago (R$ por Kg):", min_value=0.0, value=float(custo_atual_db), step=0.5)
                     
@@ -425,7 +424,7 @@ def painel_fabrica(matriz_receitas, fila_producao, hist_concluidos, usuario):
                     executar_query("INSERT INTO historico (receita, meta_kg, caixas, peseiro, batedor, obs) VALUES (?, ?, ?, ?, ?, ?)", (lote_atual['Receita'], peso_real, cx, pes, bat, obs))
                     executar_query("DELETE FROM fila_producao WHERE id = ?", (lote_atual['ID'],))
                     st.rerun()
-                else: st.warning("⚠️️ Marque todas as pesagens.")
+                else: st.warning("⚠ Marque todas as pesagens.")
 
 # ==========================================
 # 🚀 6. MOTOR DE LOGIN
