@@ -179,7 +179,6 @@ def renderizar_painel_adm(matriz_receitas, fila_producao, estoque_atual, perfil)
         with tabs[tab_idx]:
             c_lancamento, c_tabela = st.columns([1, 1.5])
             
-            # ATUALIZAÇÃO 2: Lançamento de Notas Fiscais (Kardex Simplificado)
             with c_lancamento:
                 st.subheader("📥 Lançar Entrada (Compra)")
                 ingredientes_unicos = set(ing for rec in matriz_receitas.values() for ing in rec["ingredientes"].keys())
@@ -187,30 +186,33 @@ def renderizar_painel_adm(matriz_receitas, fila_producao, estoque_atual, perfil)
                     if ing not in estoque_atual: executar_query("INSERT INTO estoque (ingrediente, custo_kg, qtd_atual_kg) VALUES (?, 0.0, 0.0)", (ing,))
                 
                 with st.form("form_entrada", border=True):
-                    ing_selecionado = st.selectbox("Selecione o Insumo Comprado:", sorted(list(estoque_atual.keys())))
+                    opcoes_ingredientes = sorted(list(estoque_atual.keys())) if estoque_atual else ["Nenhum cadastrado"]
+                    ing_selecionado = st.selectbox("Selecione o Insumo Comprado:", opcoes_ingredientes)
                     qtd_comprada = st.number_input("Quantidade Comprada (Kg):", min_value=0.1, value=10.0, step=1.0)
-                   novo_custo = st.number_input(
-    "Novo Preço Pago (R$ por Kg):", 
-    min_value=0.01, 
-    value=estoque_atual.get(ing_selecionado, {}).get("custo_kg", 0.01), 
-    step=0.5
-)
+                    
+                    # CORREÇÃO DO ERRO: min_value agora é 0.0 para aceitar o estoque zerado inicial!
+                    custo_atual_db = estoque_atual.get(ing_selecionado, {}).get("custo_kg", 0.0) if estoque_atual else 0.0
+                    novo_custo = st.number_input("Novo Preço Pago (R$ por Kg):", min_value=0.0, value=float(custo_atual_db), step=0.5)
                     
                     if st.form_submit_button("➕ Registrar Estoque", type="primary"):
-                        qtd_antiga = estoque_atual.get(ing_selecionado, {}).get("qtd_atual_kg", 0.0)
-                        nova_qtd_total = qtd_antiga + qtd_comprada
-                        executar_query("UPDATE estoque SET qtd_atual_kg = ?, custo_kg = ? WHERE ingrediente = ?", (nova_qtd_total, novo_custo, ing_selecionado))
-                        st.success(f"Entrada de {qtd_comprada}kg de {ing_selecionado} registrada!")
-                        st.rerun()
+                        if estoque_atual:
+                            qtd_antiga = estoque_atual.get(ing_selecionado, {}).get("qtd_atual_kg", 0.0)
+                            nova_qtd_total = qtd_antiga + qtd_comprada
+                            executar_query("UPDATE estoque SET qtd_atual_kg = ?, custo_kg = ? WHERE ingrediente = ?", (nova_qtd_total, novo_custo, ing_selecionado))
+                            st.success(f"Entrada de {qtd_comprada}kg de {ing_selecionado} registrada!")
+                            st.rerun()
 
             with c_tabela:
                 st.subheader("📦 Posição Atual e Ajustes")
                 df_estoque = pd.DataFrame([{"Insumo": k, "Custo (R$/Kg)": v["custo_kg"], "Estoque (Kg)": v["qtd_atual_kg"]} for k, v in carregar_estoque().items()])
-                df_editado = st.data_editor(df_estoque, hide_index=True, use_container_width=True)
-                if st.button("💾 Salvar Ajuste Manual"):
-                    for _, row in df_editado.iterrows(): executar_query("UPDATE estoque SET custo_kg = ?, qtd_atual_kg = ? WHERE ingrediente = ?", (float(row["Custo (R$/Kg)"]), float(row["Estoque (Kg)"]), row["Insumo"]))
-                    st.success("Tabela ajustada!")
-                    st.rerun()
+                if not df_estoque.empty:
+                    df_editado = st.data_editor(df_estoque, hide_index=True, use_container_width=True)
+                    if st.button("💾 Salvar Ajuste Manual"):
+                        for _, row in df_editado.iterrows(): executar_query("UPDATE estoque SET custo_kg = ?, qtd_atual_kg = ? WHERE ingrediente = ?", (float(row["Custo (R$/Kg)"]), float(row["Estoque (Kg)"]), row["Insumo"]))
+                        st.success("Tabela ajustada!")
+                        st.rerun()
+                else:
+                    st.info("O estoque está vazio. Cadastre uma receita no cofre primeiro.")
         tab_idx += 1
 
     if "💰 Precificação (CMV)" in abas_disponiveis:
@@ -256,7 +258,6 @@ def renderizar_painel_adm(matriz_receitas, fila_producao, estoque_atual, perfil)
             if not df_hist.empty:
                 df_hist['Data_Formatada'] = pd.to_datetime(df_hist['Data']).dt.date
                 
-                # ATUALIZAÇÃO 3: Filtro de Datas no Dashboard para evitar travamento
                 filtro_data = st.radio("Selecione o Período para Análise:", ["Hoje", "Últimos 7 Dias", "Este Mês", "Todo o Histórico"], horizontal=True)
                 hoje = datetime.now().date()
                 
@@ -306,7 +307,7 @@ def renderizar_painel_adm(matriz_receitas, fila_producao, estoque_atual, perfil)
                     with st.expander(f"📖 [{dados['sku']}] {rec}"):
                         st.json(dados["ingredientes"])
                         st.info(dados["modo_preparo"])
-                        if st.button(f"🗑️️ Excluir", key=f"del_{rec}"):
+                        if st.button(f"🗑 Excluir", key=f"del_{rec}"):
                             executar_query("DELETE FROM receitas WHERE nome = ?", (rec,))
                             st.rerun()
         tab_idx += 1
@@ -424,7 +425,7 @@ def painel_fabrica(matriz_receitas, fila_producao, hist_concluidos, usuario):
                     executar_query("INSERT INTO historico (receita, meta_kg, caixas, peseiro, batedor, obs) VALUES (?, ?, ?, ?, ?, ?)", (lote_atual['Receita'], peso_real, cx, pes, bat, obs))
                     executar_query("DELETE FROM fila_producao WHERE id = ?", (lote_atual['ID'],))
                     st.rerun()
-                else: st.warning("⚠️ Marque todas as pesagens.")
+                else: st.warning("⚠️️ Marque todas as pesagens.")
 
 # ==========================================
 # 🚀 6. MOTOR DE LOGIN
@@ -448,7 +449,6 @@ if not st.session_state["autenticado"]:
                     st.rerun()
                 else: st.error("Credenciais inválidas.")
 else:
-    # ATUALIZAÇÃO 4: SIDEBAR PREMIUM
     st.sidebar.markdown(f"""
         <div style="text-align:center; padding: 10px; background-color: #0f172a; border-radius: 10px; border: 1px solid #3b82f6; margin-bottom: 15px;">
             <h2 style="color: #60a5fa; margin:0;">🏭 MESTRE GIL</h2>
