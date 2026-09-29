@@ -1,10 +1,36 @@
+import streamlit as st
+import pandas as pd
+
+# 1. Configuração da página (DEVE ser a primeira linha)
+st.set_page_config(layout="wide", page_title="App Mestre Gil")
+
+# 2. Criação do Menu Lateral
+st.sidebar.title("🏭 Navegação Mestre Gil")
+menu = st.sidebar.radio("Selecione o Módulo:", [
+    "📦 Gestão e Estoque", 
+    "🧪 Motor Físico-Químico"
+])
+
+# ==========================================
+# MÓDULO 1: SEU APLICATIVO ORIGINAL
+# ==========================================
+if menu == "📦 Gestão e Estoque":
+    st.title("📦 Gestão de Produção e Estoque")
+    
+    # ---------------------------------------------------------
+    # 👇 COLE O SEU CÓDIGO ANTIGO INTEIRO EXATAMENTE AQUI 👇
+    # ---------------------------------------------------------
+    st.info("Espaço reservado para o seu código de estoque e fichas.")
+    
+    # ---------------------------------------------------------
+
+
 # ==========================================
 # MÓDULO 2: NOVO MOTOR DE BALANCEAMENTO
 # ==========================================
 elif menu == "🧪 Motor Físico-Químico":
     st.title("🧪 Motor de Balanceamento Físico-Químico")
     
-    # 1. Categoria do Produto Final
     st.subheader("📋 Classificação da Formulação")
     colA, colB = st.columns(2)
     with colA:
@@ -12,19 +38,14 @@ elif menu == "🧪 Motor Físico-Químico":
     with colB:
         categoria_receita = st.selectbox("Categoria do Produto:", ["Sorvete de Massa", "Gelato", "Açaí", "Picolé", "Creme Zero Açúcar"])
     
-    # 2. Banco de Dados Técnico - Agora com a chave "Categoria"
     BASE_INGREDIENTES = {
         "Água Filtrada": {"Categoria": "💧 Líquidos Base", "ST": 0.0, "Gordura": 0.0, "SNG": 0.0, "PAC": 0, "POD": 0},
         "Leite Integral (Fluido)": {"Categoria": "💧 Líquidos Base", "ST": 12.0, "Gordura": 3.0, "SNG": 9.0, "PAC": 0, "POD": 0},
-        
         "Leite em Pó Integral": {"Categoria": "🥛 Laticínios em Pó", "ST": 97.0, "Gordura": 26.0, "SNG": 71.0, "PAC": 0, "POD": 0},
-        
         "Açúcar (Sacarose)": {"Categoria": "🍬 Açúcares e Carboidratos", "ST": 100.0, "Gordura": 0.0, "SNG": 0.0, "PAC": 100, "POD": 100},
         "Glucose em Pó (DE 40)": {"Categoria": "🍬 Açúcares e Carboidratos", "ST": 95.0, "Gordura": 0.0, "SNG": 0.0, "PAC": 45, "POD": 50},
         "Maltodextrina": {"Categoria": "🍬 Açúcares e Carboidratos", "ST": 95.0, "Gordura": 0.0, "SNG": 0.0, "PAC": 15, "POD": 10},
-        
         "Gordura de Palma": {"Categoria": "🧈 Gorduras e Pastas", "ST": 100.0, "Gordura": 100.0, "SNG": 0.0, "PAC": 0, "POD": 0},
-        
         "Emustab / Estabilizante": {"Categoria": "🧪 Aditivos e Gomas", "ST": 100.0, "Gordura": 0.0, "SNG": 0.0, "PAC": 0, "POD": 0},
     }
 
@@ -38,17 +59,13 @@ elif menu == "🧪 Motor Físico-Químico":
     )
 
     st.write("2. Insira os pesos separados por categoria:")
-    
     pesos_receita = {}
     
-    # Agrupando a exibição na tela por Categorias
     categorias_unicas = sorted(list(set([BASE_INGREDIENTES[ing]["Categoria"] for ing in ingredientes_selecionados])))
     
     for cat in categorias_unicas:
-        # Cria uma caixinha expansível para cada categoria
         with st.expander(f"{cat}", expanded=True):
             cols_pesos = st.columns(4)
-            # Filtra os ingredientes selecionados que pertencem a esta categoria
             itens_desta_categoria = [ing for ing in ingredientes_selecionados if BASE_INGREDIENTES[ing]["Categoria"] == cat]
             
             for i, ingrediente in enumerate(itens_desta_categoria):
