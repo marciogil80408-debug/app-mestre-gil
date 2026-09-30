@@ -114,46 +114,72 @@ def carregar_estoque():
 init_db()
 
 # ==========================================
-# 🎨 3. DESIGN EXECUTIVO PREMIUM (CSS REFINADO)
+# 🎨 3. DESIGN EXECUTIVO POLIDO (CSS REFINADO)
 # ==========================================
 def aplicar_css_premium():
     st.markdown("""
         <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap');
         
         * {
             font-family: 'Inter', sans-serif;
         }
 
-        /* Estilização da Barra Lateral */
+        /* Ajuste do topo do app */
+        .block-container {
+            padding-top: 1.8rem !important;
+            padding-bottom: 2rem !important;
+        }
+
+        /* Barra Lateral */
         [data-testid="stSidebar"] {
             background-color: #0b1120 !important;
             border-right: 1px solid #1e293b !important;
         }
         
-        /* Menu de Navegação Vertical Estilizado */
+        /* 🔥 REMOVE AS BOLINHAS DO RADIO E TRANSFORMA EM BOTÕES SAAS */
         [data-testid="stSidebar"] .stRadio > div {
-            gap: 4px;
+            gap: 6px !important;
         }
         [data-testid="stSidebar"] .stRadio label {
-            background: #111827;
-            border: 1px solid #1f2937;
-            padding: 10px 14px;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.2s ease-in-out;
-            margin-bottom: 2px;
-            width: 100%;
+            background: #111827 !important;
+            border: 1px solid #1f2937 !important;
+            padding: 10px 14px !important;
+            border-radius: 8px !important;
+            cursor: pointer !important;
+            transition: all 0.2s ease !important;
+            display: flex !important;
+            align-items: center !important;
+            width: 100% !important;
+            margin: 0 !important;
         }
-        [data-testid="stSidebar"] .stRadio label:hover {
-            background: #1e293b;
-            border-color: #38bdf8;
-            transform: translateX(3px);
+        /* Esconde a bolinha (input radio) */
+        [data-testid="stSidebar"] .stRadio label > div:first-child {
+            display: none !important;
         }
+        /* Destaca o texto do menu */
         [data-testid="stSidebar"] .stRadio label div[data-testid="stMarkdownContainer"] p {
             font-size: 0.92rem !important;
             font-weight: 600 !important;
-            color: #e2e8f0 !important;
+            color: #cbd5e1 !important;
+            margin: 0 !important;
+        }
+        /* Efeito de passar o mouse */
+        [data-testid="stSidebar"] .stRadio label:hover {
+            background: #1e293b !important;
+            border-color: #38bdf8 !important;
+            transform: translateX(4px) !important;
+        }
+        /* Aba Ativa Selecionada */
+        [data-testid="stSidebar"] .stRadio label:has(input:checked) {
+            background: linear-gradient(90deg, #1e293b 0%, #0f172a 100%) !important;
+            border-color: #38bdf8 !important;
+            border-left: 4px solid #38bdf8 !important;
+            box-shadow: 0 4px 12px rgba(56, 189, 248, 0.15) !important;
+        }
+        [data-testid="stSidebar"] .stRadio label:has(input:checked) p {
+            color: #38bdf8 !important;
+            font-weight: 800 !important;
         }
 
         /* Botões Globais */
@@ -171,7 +197,7 @@ def aplicar_css_premium():
             color: white !important;
         }
         
-        /* Botão Verde de Ação Principal */
+        /* Botão Verde Principal */
         .stButton button[kind="primary"] { 
             background: linear-gradient(135deg, #10b981 0%, #047857 100%) !important; 
             color: white !important; 
@@ -199,7 +225,7 @@ def aplicar_css_premium():
             background: #b91c1c !important;
         }
 
-        /* Abas Estilizadas com Acabamento Tecnológico */
+        /* Abas Estilizadas */
         .stTabs [data-baseweb="tab-list"] {
             gap: 8px;
             background-color: #0b1120;
@@ -239,14 +265,13 @@ def aplicar_css_premium():
             font-size: 0.95rem;
         }
 
-        /* Tabela Nutricional Limpa Padrão Rótulo */
+        /* Tabela Nutricional */
         .anvisa-table { width: 100%; max-width: 500px; border-collapse: collapse; font-family: Arial, sans-serif; background-color: white !important; color: black !important; margin: 0 auto; border: 2px solid black; }
         .anvisa-table th, .anvisa-table td { color: black !important; background-color: white !important; border-bottom: 1px solid black; padding: 6px 4px; text-align: left; font-size: 14px; }
         .anvisa-table th { font-weight: 900; border-bottom: 2px solid black; }
         .anvisa-header { text-align: center; font-weight: 900; font-size: 20px; padding: 10px 0; border-bottom: 5px solid black; }
         .anvisa-sub { font-size: 12px; font-weight: bold; border-bottom: 1px solid black; padding: 4px; }
 
-        /* Impressão Direta */
         @media print {
             header, footer, [data-testid="stSidebar"], .stButton, nav, #MainMenu {
                 display: none !important;
@@ -734,7 +759,7 @@ else:
         if solidos_totais < 32:
             st.warning("⚠️ Calda com baixo teor de sólidos. Risco de formação de cristais de gelo.")
         elif solidos_totais > 42:
-            st.warning("⚠️ Calda muito pesada em sólidos. Textura pode ficar arenosa.")
+            st.warning("⚠️️ Calda muito pesada em sólidos. Textura pode ficar arenosa.")
         else:
             st.success("✅ Calda com proporção de sólidos ideal para gelados industriais.")
 
@@ -845,7 +870,7 @@ else:
 
         t_cfg1, t_cfg2, t_cfg3, t_cfg4 = st.tabs([
             "🧹 Manutenção Rápida", 
-            "🗃️ Editor de Banco de Dados", 
+            "🗃️️ Editor de Banco de Dados", 
             "💾 Backup / Download", 
             "💻 Console SQL"
         ])
