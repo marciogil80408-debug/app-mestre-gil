@@ -144,7 +144,6 @@ def aplicar_css_premium():
         .anvisa-header { text-align: center; font-weight: 900; font-size: 20px; padding: 10px 0; border-bottom: 5px solid black; }
         .anvisa-sub { font-size: 12px; font-weight: bold; border-bottom: 1px solid black; padding: 4px; }
 
-        /* Estilização para impressão direta */
         @media print {
             header, footer, [data-testid="stSidebar"], .stButton, nav, #MainMenu {
                 display: none !important;
@@ -344,6 +343,8 @@ else:
         opcoes_menu.append("🍎 Rotulagem Anvisa")
     if st.session_state["perfil"] in ["Mestre", "Gerente"]:
         opcoes_menu.append("👥 Gestão de RH")
+    if st.session_state["perfil"] == "Mestre":
+        opcoes_menu.append("🛠️ Painel Mestre / Configurações")
 
     menu_selecionado = st.sidebar.radio("Navegação do Sistema:", opcoes_menu)
 
@@ -442,7 +443,6 @@ else:
     elif menu_selecionado == "📝 Montar Ficha Técnica":
         st.title("📝 Montar Ficha Técnica & Formulação")
         
-        # Gerenciamento de Edição no session_state
         if "receita_em_edicao" not in st.session_state:
             st.session_state["receita_em_edicao"] = None
 
@@ -543,7 +543,6 @@ else:
                 txt_p = f"{peso_calc*1000:.0f} g" if peso_calc < 1.0 else f"{peso_calc:.3f} kg"
                 linhas_html_tabela += f"<tr><td style='border: 1px solid black; padding: 8px;'><b>{ing}</b></td><td style='border: 1px solid black; padding: 8px; text-align: right;'><b>{txt_p}</b></td></tr>"
             
-            # Botão Direto para a Impressora usando JavaScript window.print()
             st.components.v1.html("""
                 <button onclick="window.print()" style="
                     background: #10b981;
@@ -724,3 +723,84 @@ else:
                     st.success("Usuário Cadastrado com sucesso!")
                     st.rerun()
         st.dataframe(pd.DataFrame([{"Login": u[0], "Nome": u[1], "Perfil": u[2]} for u in carregar_dados_tabela("SELECT login, nome, perfil FROM usuarios")]), use_container_width=True)
+
+    elif menu_selecionado == "🛠️ Painel Mestre / Configurações":
+        st.title("🛠️ Painel Mestre - Controle & Manutenção Geral")
+        st.caption("Acesso irrestrito a todas as tabelas, banco de dados, backups e ações de limpeza.")
+
+        t_cfg1, t_cfg2, t_cfg3, t_cfg4 = st.tabs([
+            "🧹 Manutenção Rápida", 
+            "🗃️ Editor de Banco de Dados", 
+            "💾 Backup / Download", 
+            "💻 Console SQL"
+        ])
+
+        with t_cfg1:
+            st.subheader("Ações de Limpeza Operacional")
+            col_b1, col_b2 = st.columns(2)
+            with col_b1:
+                with st.container(border=True):
+                    st.markdown("#### 🗑️ Limpar Fila de Produção")
+                    st.write("Remove todas as ordens pendentes da fila da fábrica.")
+                    if st.button("Executar Limpeza da Fila", type="primary"):
+                        executar_query("DELETE FROM fila_producao")
+                        st.success("Fila de produção esvaziada!")
+                        st.rerun()
+            with col_b2:
+                with st.container(border=True):
+                    st.markdown("#### 📜 Resetar Histórico de Produção")
+                    st.write("Apaga todos os registros de lotes já finalizados.")
+                    senha_confirm = st.text_input("Digite sua senha para confirmar o reset:", type="password", key="pwd_reset_hist")
+                    if st.button("Resetar Histórico", key="btn_reset_hist"):
+                        if senha_confirm == "mestre123":
+                            executar_query("DELETE FROM historico")
+                            st.success("Histórico de produção zerado!")
+                            st.rerun()
+                        else:
+                            st.error("Senha incorreta.")
+
+        with t_cfg2:
+            st.subheader("Visualizar e Modificar Dados das Tabelas")
+            tabela_escolhida = st.selectbox("Selecione a Tabela do Sistema:", ["receitas", "estoque", "fila_producao", "historico", "usuarios", "tabela_nutricional"])
+            dados_tabela = pd.read_sql_query(f"SELECT * FROM {tabela_escolhida}", sqlite3.connect(DB_NAME))
+            
+            st.write(f"Total de registros em `{tabela_escolhida}`: **{len(dados_tabela)}**")
+            df_edit_direto = st.data_editor(dados_tabela, num_rows="dynamic", use_container_width=True, key=f"editor_raw_{tabela_escolhida}")
+            
+            if st.button(f"💾 Gravar Alterações em {tabela_escolhida}"):
+                conn = sqlite3.connect(DB_NAME)
+                df_edit_direto.to_sql(tabela_escolhida, conn, if_exists="replace", index=False)
+                conn.close()
+                st.success(f"Tabela {tabela_escolhida} salva com sucesso!")
+                st.rerun()
+
+        with t_cfg3:
+            st.subheader("Exportação Completa de Dados")
+            st.write("Baixe o backup completo das suas fórmulas e estoque em formato JSON para restaurar ou guardar com segurança.")
+            
+            backup_dict = {
+                "receitas": carregar_receitas(),
+                "estoque": carregar_estoque(),
+                "data_backup": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            }
+            json_str = json.dumps(backup_dict, indent=2, ensure_ascii=False)
+            
+            st.download_button(
+                label="📥 Baixar Arquivo de Backup Completo (JSON)",
+                data=json_str,
+                file_name=f"backup_mestre_gil_{datetime.now().strftime('%Y%m%d_%H%M')}.json",
+                mime="application/json"
+            )
+
+        with t_cfg4:
+            st.subheader("Execução Direta de Comandos SQL")
+            st.warning("⚠️ Atenção: Comandos SQL afetam o banco de dados diretamente.")
+            query_sql = st.text_area("Instrução SQL:", placeholder="Ex: UPDATE estoque SET custo_kg = 15.0 WHERE ingrediente = 'Leite em Pó'")
+            if st.button("Executar Comando SQL"):
+                if query_sql.strip():
+                    try:
+                        executar_query(query_sql)
+                        st.success("Comando executado com sucesso no banco de dados!")
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"Erro na execução do SQL: {e}")
