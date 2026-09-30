@@ -12,7 +12,7 @@ st.set_page_config(page_title="App Mestre Gil - ERP Industrial", page_icon="🏭
 DB_NAME = "fabrica_gelado.db"
 
 # ==========================================
-# 🗄️ 2. BANCO DE DADOS & SEGURANÇA
+# 🗄️️ 2. BANCO DE DADOS & SEGURANÇA
 # ==========================================
 def init_db():
     conn = sqlite3.connect(DB_NAME)
@@ -125,19 +125,16 @@ def aplicar_css_premium():
             font-family: 'Inter', sans-serif;
         }
 
-        /* Ajuste do topo do app */
         .block-container {
             padding-top: 1.8rem !important;
             padding-bottom: 2rem !important;
         }
 
-        /* Barra Lateral */
         [data-testid="stSidebar"] {
             background-color: #0b1120 !important;
             border-right: 1px solid #1e293b !important;
         }
         
-        /* 🔥 REMOVE AS BOLINHAS DO RADIO E TRANSFORMA EM BOTÕES SAAS */
         [data-testid="stSidebar"] .stRadio > div {
             gap: 6px !important;
         }
@@ -153,24 +150,20 @@ def aplicar_css_premium():
             width: 100% !important;
             margin: 0 !important;
         }
-        /* Esconde a bolinha (input radio) */
         [data-testid="stSidebar"] .stRadio label > div:first-child {
             display: none !important;
         }
-        /* Destaca o texto do menu */
         [data-testid="stSidebar"] .stRadio label div[data-testid="stMarkdownContainer"] p {
             font-size: 0.92rem !important;
             font-weight: 600 !important;
             color: #cbd5e1 !important;
             margin: 0 !important;
         }
-        /* Efeito de passar o mouse */
         [data-testid="stSidebar"] .stRadio label:hover {
             background: #1e293b !important;
             border-color: #38bdf8 !important;
             transform: translateX(4px) !important;
         }
-        /* Aba Ativa Selecionada */
         [data-testid="stSidebar"] .stRadio label:has(input:checked) {
             background: linear-gradient(90deg, #1e293b 0%, #0f172a 100%) !important;
             border-color: #38bdf8 !important;
@@ -182,7 +175,6 @@ def aplicar_css_premium():
             font-weight: 800 !important;
         }
 
-        /* Botões Globais */
         .stButton button[kind="secondary"], .stButton button:not([kind="primary"]) {
             background: #1e293b !important;
             color: #f1f5f9 !important;
@@ -197,7 +189,6 @@ def aplicar_css_premium():
             color: white !important;
         }
         
-        /* Botão Verde Principal */
         .stButton button[kind="primary"] { 
             background: linear-gradient(135deg, #10b981 0%, #047857 100%) !important; 
             color: white !important; 
@@ -215,7 +206,6 @@ def aplicar_css_premium():
             box-shadow: 0 6px 18px rgba(16, 185, 129, 0.45) !important;
         }
 
-        /* Botão Vermelho de Cancelar */
         .btn-cancelar button {
             background: #dc2626 !important; 
             color: white !important;
@@ -225,7 +215,6 @@ def aplicar_css_premium():
             background: #b91c1c !important;
         }
 
-        /* Abas Estilizadas */
         .stTabs [data-baseweb="tab-list"] {
             gap: 8px;
             background-color: #0b1120;
@@ -246,7 +235,6 @@ def aplicar_css_premium():
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
         }
 
-        /* Ficha Operacional e Painéis */
         .ficha-box { 
             background: linear-gradient(180deg, #111827 0%, #0f172a 100%);
             border: 1px solid #2563eb; 
@@ -265,7 +253,6 @@ def aplicar_css_premium():
             font-size: 0.95rem;
         }
 
-        /* Tabela Nutricional */
         .anvisa-table { width: 100%; max-width: 500px; border-collapse: collapse; font-family: Arial, sans-serif; background-color: white !important; color: black !important; margin: 0 auto; border: 2px solid black; }
         .anvisa-table th, .anvisa-table td { color: black !important; background-color: white !important; border-bottom: 1px solid black; padding: 6px 4px; text-align: left; font-size: 14px; }
         .anvisa-table th { font-weight: 900; border-bottom: 2px solid black; }
@@ -315,7 +302,7 @@ def painel_fabrica(matriz_receitas, fila_producao, hist_concluidos, usuario):
     peso_total_lote = peso_por_batida * batidas_planejadas
 
     st.markdown(f"""
-        <div class="ficha-box">
+        <div class="ficha-box notranslate" translate="no">
             <h3 style="margin: 0; color: #38bdf8; text-align: center; text-transform: uppercase; letter-spacing: 1px;">📋 FICHA DE PRODUÇÃO EM ANDAMENTO</h3>
             <h1 style="margin: 8px 0; color: #f8fafc; text-align: center; font-size: 2.2rem;">[{rec_dados['sku']}] {lote_atual['Receita']}</h1>
             <div style="display: flex; justify-content: space-between; font-size: 1.05rem; font-weight: 700; margin-top: 10px; background: #0f172a; padding: 10px 16px; border-radius: 8px; border: 1px solid #1e293b;">
@@ -340,7 +327,7 @@ def painel_fabrica(matriz_receitas, fila_producao, hist_concluidos, usuario):
             
             ratio_check = max(1.5, batidas_planejadas * 0.5)
             col_nome, col_tripla, col_peso = st.columns([2, ratio_check, 1.2])
-            with col_nome: st.markdown(f"<div style='font-size: 1.1em; font-weight: 700; padding-top: 12px; color: #f8fafc;'>• {ing}</div>", unsafe_allow_html=True)
+            with col_nome: st.markdown(f"<div class='notranslate' translate='no' style='font-size: 1.1em; font-weight: 700; padding-top: 12px; color: #f8fafc;'>• {ing}</div>", unsafe_allow_html=True)
             with col_tripla:
                 cols_b = st.columns(batidas_planejadas)
                 for b in range(1, batidas_planejadas + 1):
@@ -351,7 +338,7 @@ def painel_fabrica(matriz_receitas, fila_producao, hist_concluidos, usuario):
             st.divider()
 
         st.markdown("### 2. PASSO A PASSO OPERACIONAL (POP)")
-        st.markdown(f"<div class='passo-passo-box'>{rec_dados['modo_preparo'].replace(chr(10), '<br>')}</div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='passo-passo-box notranslate' translate='no'>{rec_dados['modo_preparo'].replace(chr(10), '<br>')}</div>", unsafe_allow_html=True)
 
         st.markdown("### 3. CONTROLE & AUDITORIA DE FECHAMENTO")
         c1, c2 = st.columns(2)
@@ -441,10 +428,9 @@ if not st.session_state["autenticado"]:
                 else:
                     st.error("❌ Credenciais inválidas.")
 else:
-    # Sidebar Estilo Crachá Industrial
     cor_badge = "#f59e0b" if st.session_state['perfil'] in ["Mestre", "Gerente"] else "#3b82f6"
     st.sidebar.markdown(f"""
-        <div style="background: linear-gradient(180deg, #111827 0%, #1e293b 100%); padding: 16px; border-radius: 12px; border: 1px solid #334155; margin-bottom: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);">
+        <div class="notranslate" translate="no" style="background: linear-gradient(180deg, #111827 0%, #1e293b 100%); padding: 16px; border-radius: 12px; border: 1px solid #334155; margin-bottom: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);">
             <div style="font-size: 1.15rem; font-weight: 800; color: #38bdf8; text-align: center; letter-spacing: 0.5px;">🏭 MESTRE GIL</div>
             <div style="font-size: 0.75rem; color: #94a3b8; text-align: center; margin-bottom: 12px;">SISTEMA INDUSTRIAL ERP</div>
             <div style="background: {cor_badge}; color: #0f172a; padding: 4px 8px; border-radius: 6px; text-align: center; font-weight: 800; font-size: 0.78rem; text-transform: uppercase;">
@@ -681,7 +667,8 @@ else:
             for ing, q in d["ingredientes"].items():
                 peso_calc = (q / soma_p) * peso_lote_print
                 txt_p = f"{peso_calc*1000:.0f} g" if peso_calc < 1.0 else f"{peso_calc:.3f} kg"
-                linhas_html_tabela += f"<tr><td style='border: 1px solid black; padding: 8px;'><b>{ing}</b></td><td style='border: 1px solid black; padding: 8px; text-align: right;'><b>{txt_p}</b></td></tr>"
+                # Blindagem contra duplicidade por tradução automática: translate="no" e class="notranslate"
+                linhas_html_tabela += f"<tr class='notranslate' translate='no'><td class='notranslate' translate='no' style='border: 1px solid black; padding: 8px;'><b>{ing}</b></td><td class='notranslate' translate='no' style='border: 1px solid black; padding: 8px; text-align: right;'><b>{txt_p}</b></td></tr>"
             
             st.components.v1.html("""
                 <button onclick="window.print()" style="
@@ -701,7 +688,7 @@ else:
             """, height=65)
 
             st.markdown(f"""
-                <div class="print-area" style="background-color: white; color: black; padding: 25px; border-radius: 8px; border: 2px solid #000; margin-top: 15px;">
+                <div class="print-area notranslate" translate="no" style="background-color: white; color: black; padding: 25px; border-radius: 8px; border: 2px solid #000; margin-top: 15px;">
                     <div style="text-align: center; border-bottom: 3px solid black; padding-bottom: 10px; margin-bottom: 15px;">
                         <h2 style="margin: 0; color: black; text-transform: uppercase;">ORDEM DE PRODUÇÃO / FICHA TÉCNICA</h2>
                         <h1 style="margin: 5px 0; color: black;">[{d['sku']}] {rec_sel}</h1>
@@ -759,7 +746,7 @@ else:
         if solidos_totais < 32:
             st.warning("⚠️ Calda com baixo teor de sólidos. Risco de formação de cristais de gelo.")
         elif solidos_totais > 42:
-            st.warning("⚠️️ Calda muito pesada em sólidos. Textura pode ficar arenosa.")
+            st.warning("⚠️ Calda muito pesada em sólidos. Textura pode ficar arenosa.")
         else:
             st.success("✅ Calda com proporção de sólidos ideal para gelados industriais.")
 
@@ -870,7 +857,7 @@ else:
 
         t_cfg1, t_cfg2, t_cfg3, t_cfg4 = st.tabs([
             "🧹 Manutenção Rápida", 
-            "🗃️️ Editor de Banco de Dados", 
+            "🗃 Editor de Banco de Dados", 
             "💾 Backup / Download", 
             "💻 Console SQL"
         ])
