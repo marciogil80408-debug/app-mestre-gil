@@ -114,36 +114,139 @@ def carregar_estoque():
 init_db()
 
 # ==========================================
-# 🎨 3. ESTILIZAÇÃO E INTERFACE
+# 🎨 3. DESIGN EXECUTIVO PREMIUM (CSS REFINADO)
 # ==========================================
 def aplicar_css_premium():
     st.markdown("""
         <style>
-        .stButton button[kind="secondary"] { border-radius: 8px; font-weight: bold; transition: all 0.3s ease; }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap');
+        
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* Estilização da Barra Lateral */
+        [data-testid="stSidebar"] {
+            background-color: #0b1120 !important;
+            border-right: 1px solid #1e293b !important;
+        }
+        
+        /* Menu de Navegação Vertical Estilizado */
+        [data-testid="stSidebar"] .stRadio > div {
+            gap: 4px;
+        }
+        [data-testid="stSidebar"] .stRadio label {
+            background: #111827;
+            border: 1px solid #1f2937;
+            padding: 10px 14px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            margin-bottom: 2px;
+            width: 100%;
+        }
+        [data-testid="stSidebar"] .stRadio label:hover {
+            background: #1e293b;
+            border-color: #38bdf8;
+            transform: translateX(3px);
+        }
+        [data-testid="stSidebar"] .stRadio label div[data-testid="stMarkdownContainer"] p {
+            font-size: 0.92rem !important;
+            font-weight: 600 !important;
+            color: #e2e8f0 !important;
+        }
+
+        /* Botões Globais */
+        .stButton button[kind="secondary"], .stButton button:not([kind="primary"]) {
+            background: #1e293b !important;
+            color: #f1f5f9 !important;
+            border: 1px solid #334155 !important;
+            border-radius: 8px !important;
+            font-weight: 600 !important;
+            transition: all 0.2s ease;
+        }
+        .stButton button[kind="secondary"]:hover, .stButton button:not([kind="primary"]):hover {
+            background: #334155 !important;
+            border-color: #64748b !important;
+            color: white !important;
+        }
+        
+        /* Botão Verde de Ação Principal */
         .stButton button[kind="primary"] { 
-            background: linear-gradient(135deg, #10b981, #059669) !important; 
+            background: linear-gradient(135deg, #10b981 0%, #047857 100%) !important; 
             color: white !important; 
-            font-weight: 900 !important; 
+            font-weight: 800 !important; 
             border-radius: 8px !important; 
             border: none !important; 
-            padding: 0.8rem !important; 
-            font-size: 1.1em !important; 
-            box-shadow: 0 4px 10px rgba(16, 185, 129, 0.4) !important; 
+            padding: 0.75rem 1.2rem !important; 
+            font-size: 1rem !important; 
+            box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3) !important;
+            transition: all 0.2s ease;
         }
-        .stButton button[kind="primary"]:hover { background: linear-gradient(135deg, #059669, #047857) !important; transform: translateY(-2px); }
-        .btn-cancelar button { background: #ef4444 !important; color: white !important; }
-        .btn-cancelar button:hover { background: #dc2626 !important; }
-        [data-testid="stImage"] img { border-radius: 15px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3); }
-        input[type="checkbox"] { transform: scale(1.6); cursor: pointer; }
-        [data-testid="stCheckbox"] span[data-baseweb="checkbox"] > div { border: 2px solid #60a5fa !important; border-radius: 4px !important; }
-        .ficha-box { background-color: rgba(30, 41, 59, 0.5); border: 2px solid #3b82f6; border-radius: 12px; padding: 25px; margin-bottom: 25px; }
-        .passo-passo-box { background-color: rgba(17, 24, 39, 0.7); border-left: 4px solid #10b981; padding: 15px; border-radius: 6px; font-family: monospace; color: #34d399; }
+        .stButton button[kind="primary"]:hover { 
+            background: linear-gradient(135deg, #059669 0%, #065f46 100%) !important; 
+            transform: translateY(-2px);
+            box-shadow: 0 6px 18px rgba(16, 185, 129, 0.45) !important;
+        }
+
+        /* Botão Vermelho de Cancelar */
+        .btn-cancelar button {
+            background: #dc2626 !important; 
+            color: white !important;
+            border: none !important;
+        }
+        .btn-cancelar button:hover {
+            background: #b91c1c !important;
+        }
+
+        /* Abas Estilizadas com Acabamento Tecnológico */
+        .stTabs [data-baseweb="tab-list"] {
+            gap: 8px;
+            background-color: #0b1120;
+            padding: 6px;
+            border-radius: 10px;
+            border: 1px solid #1e293b;
+        }
+        .stTabs [data-baseweb="tab"] {
+            border-radius: 6px;
+            color: #94a3b8;
+            font-weight: 600;
+            padding: 8px 16px;
+            border: none !important;
+        }
+        .stTabs [aria-selected="true"] {
+            background-color: #1e293b !important;
+            color: #38bdf8 !important;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+        }
+
+        /* Ficha Operacional e Painéis */
+        .ficha-box { 
+            background: linear-gradient(180deg, #111827 0%, #0f172a 100%);
+            border: 1px solid #2563eb; 
+            border-radius: 12px; 
+            padding: 22px; 
+            margin-bottom: 20px; 
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+        }
+        .passo-passo-box { 
+            background-color: #030712; 
+            border-left: 4px solid #10b981; 
+            padding: 14px; 
+            border-radius: 6px; 
+            font-family: monospace; 
+            color: #34d399; 
+            font-size: 0.95rem;
+        }
+
+        /* Tabela Nutricional Limpa Padrão Rótulo */
         .anvisa-table { width: 100%; max-width: 500px; border-collapse: collapse; font-family: Arial, sans-serif; background-color: white !important; color: black !important; margin: 0 auto; border: 2px solid black; }
         .anvisa-table th, .anvisa-table td { color: black !important; background-color: white !important; border-bottom: 1px solid black; padding: 6px 4px; text-align: left; font-size: 14px; }
         .anvisa-table th { font-weight: 900; border-bottom: 2px solid black; }
         .anvisa-header { text-align: center; font-weight: 900; font-size: 20px; padding: 10px 0; border-bottom: 5px solid black; }
         .anvisa-sub { font-size: 12px; font-weight: bold; border-bottom: 1px solid black; padding: 4px; }
 
+        /* Impressão Direta */
         @media print {
             header, footer, [data-testid="stSidebar"], .stButton, nav, #MainMenu {
                 display: none !important;
@@ -188,9 +291,9 @@ def painel_fabrica(matriz_receitas, fila_producao, hist_concluidos, usuario):
 
     st.markdown(f"""
         <div class="ficha-box">
-            <h2 style="margin: 0; color: #60a5fa; text-align: center; text-transform: uppercase;">📋 FICHA DE PRODUÇÃO EM ANDAMENTO</h2>
-            <h1 style="margin: 10px 0; color: #f8fafc; text-align: center; font-size: 2.2rem;">[{rec_dados['sku']}] {lote_atual['Receita']}</h1>
-            <div style="display: flex; justify-content: space-between; font-size: 1.1rem; font-weight: bold; margin-top: 10px;">
+            <h3 style="margin: 0; color: #38bdf8; text-align: center; text-transform: uppercase; letter-spacing: 1px;">📋 FICHA DE PRODUÇÃO EM ANDAMENTO</h3>
+            <h1 style="margin: 8px 0; color: #f8fafc; text-align: center; font-size: 2.2rem;">[{rec_dados['sku']}] {lote_atual['Receita']}</h1>
+            <div style="display: flex; justify-content: space-between; font-size: 1.05rem; font-weight: 700; margin-top: 10px; background: #0f172a; padding: 10px 16px; border-radius: 8px; border: 1px solid #1e293b;">
                 <span style="color: #34d399;">🎯 LOTE TOTAL: {peso_total_lote} KG ({batidas_planejadas} Batida(s) de {peso_por_batida}kg)</span>
                 <span style="color: #cbd5e1;">📦 Rendimento Estimado: ~{int(peso_total_lote / rec_dados['und_peso'])} {rec_dados['und_nome']}</span>
             </div>
@@ -212,14 +315,14 @@ def painel_fabrica(matriz_receitas, fila_producao, hist_concluidos, usuario):
             
             ratio_check = max(1.5, batidas_planejadas * 0.5)
             col_nome, col_tripla, col_peso = st.columns([2, ratio_check, 1.2])
-            with col_nome: st.markdown(f"<div style='font-size: 1.15em; font-weight: bold; padding-top: 15px; color: #f8fafc;'>• {ing}</div>", unsafe_allow_html=True)
+            with col_nome: st.markdown(f"<div style='font-size: 1.1em; font-weight: 700; padding-top: 12px; color: #f8fafc;'>• {ing}</div>", unsafe_allow_html=True)
             with col_tripla:
                 cols_b = st.columns(batidas_planejadas)
                 for b in range(1, batidas_planejadas + 1):
                     k = f"chk_{lote_atual['ID']}_{ing}_{b}"
                     chaves_checkboxes.append(k)
                     with cols_b[b-1]: st.checkbox(f"{b}ª", key=k)
-            with col_peso: st.markdown(f"<div style='font-size: 22px; font-weight: 900; color: #34d399; text-align: right; background-color: #0f172a; padding: 10px 12px; border-radius: 6px; border: 1px solid #334155;'>{txt_val}</div>", unsafe_allow_html=True)
+            with col_peso: st.markdown(f"<div style='font-size: 20px; font-weight: 900; color: #34d399; text-align: right; background-color: #0b1120; padding: 8px 12px; border-radius: 6px; border: 1px solid #1e293b;'>{txt_val}</div>", unsafe_allow_html=True)
             st.divider()
 
         st.markdown("### 2. PASSO A PASSO OPERACIONAL (POP)")
@@ -268,7 +371,7 @@ def painel_fabrica(matriz_receitas, fila_producao, hist_concluidos, usuario):
             st.markdown("<h4 style='text-align: center; color: #cbd5e1;'>Próximos na Fila ⏳</h4><hr style='margin-top:0;'>", unsafe_allow_html=True)
             if len(fila_producao) > 1:
                 for idx, lote in enumerate(fila_producao[1:]): 
-                    st.markdown(f"**{idx+2}º** - {lote['Receita']} <span style='color:#60a5fa;'>({lote['Meta_Kg']*lote['Batidas']}kg)</span>", unsafe_allow_html=True)
+                    st.markdown(f"**{idx+2}º** - {lote['Receita']} <span style='color:#38bdf8;'>({lote['Meta_Kg']*lote['Batidas']}kg)</span>", unsafe_allow_html=True)
                     st.divider()
             else:
                 st.caption("Nenhum outro lote na fila.")
@@ -290,13 +393,18 @@ if "autenticado" not in st.session_state:
 
 if not st.session_state["autenticado"]:
     st.markdown("<br><br>", unsafe_allow_html=True)
-    col1, col2, col3 = st.columns([1, 1.5, 1])
+    col1, col2, col3 = st.columns([1, 1.4, 1])
     with col2:
         with st.form("login_form", border=True):
-            st.markdown("<h3 style='text-align:center;'>🔒 Identificação Obrigatória</h3>", unsafe_allow_html=True)
+            st.markdown("""
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <h2 style="color: #38bdf8; margin: 0;">🏭 ERP MESTRE GIL</h2>
+                    <p style="color: #94a3b8; font-size: 0.9rem; margin-top: 4px;">Controle Operacional & Inteligência Industrial</p>
+                </div>
+            """, unsafe_allow_html=True)
             login_input = st.text_input("Usuário:")
             senha_input = st.text_input("Senha Digital:", type="password")
-            if st.form_submit_button("Entrar no Sistema", type="primary"):
+            if st.form_submit_button("Entrar no Sistema", type="primary", use_container_width=True):
                 usuario_validado = carregar_dados_tabela(f"SELECT nome, perfil FROM usuarios WHERE login='{login_input.lower().strip()}' AND senha='{senha_input}'")
                 if usuario_validado:
                     st.session_state.update({
@@ -308,16 +416,20 @@ if not st.session_state["autenticado"]:
                 else:
                     st.error("❌ Credenciais inválidas.")
 else:
+    # Sidebar Estilo Crachá Industrial
+    cor_badge = "#f59e0b" if st.session_state['perfil'] in ["Mestre", "Gerente"] else "#3b82f6"
     st.sidebar.markdown(f"""
-        <div style="text-align:center; padding: 10px; background-color: #0f172a; border-radius: 10px; border: 1px solid #3b82f6; margin-bottom: 15px;">
-            <h2 style="color: #60a5fa; margin:0;">🏭 MESTRE GIL</h2>
+        <div style="background: linear-gradient(180deg, #111827 0%, #1e293b 100%); padding: 16px; border-radius: 12px; border: 1px solid #334155; margin-bottom: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);">
+            <div style="font-size: 1.15rem; font-weight: 800; color: #38bdf8; text-align: center; letter-spacing: 0.5px;">🏭 MESTRE GIL</div>
+            <div style="font-size: 0.75rem; color: #94a3b8; text-align: center; margin-bottom: 12px;">SISTEMA INDUSTRIAL ERP</div>
+            <div style="background: {cor_badge}; color: #0f172a; padding: 4px 8px; border-radius: 6px; text-align: center; font-weight: 800; font-size: 0.78rem; text-transform: uppercase;">
+                NÍVEL: {st.session_state['perfil']}
+            </div>
+            <div style="text-align: center; margin-top: 10px; font-size: 0.95rem; font-weight: 600; color: #f8fafc;">
+                👤 {st.session_state['usuario_logado']}
+            </div>
         </div>
     """, unsafe_allow_html=True)
-    
-    cor_badge = "#f59e0b" if st.session_state['perfil'] in ["Mestre", "Gerente"] else "#3b82f6"
-    st.sidebar.markdown(f"<div style='background-color: {cor_badge}; color: white; padding: 5px; border-radius: 5px; text-align: center; font-weight: bold;'>🛡️ NÍVEL: {st.session_state['perfil'].upper()}</div>", unsafe_allow_html=True)
-    st.sidebar.markdown(f"<div style='text-align: center; margin-top: 10px; font-size: 1.1em; color: #e2e8f0;'>👤 <b>{st.session_state['usuario_logado']}</b></div>", unsafe_allow_html=True)
-    st.sidebar.divider()
 
     matriz_receitas = carregar_receitas()
     estoque_atual = carregar_estoque()
@@ -349,10 +461,13 @@ else:
     menu_selecionado = st.sidebar.radio("Navegação do Sistema:", opcoes_menu)
 
     st.sidebar.divider()
-    if st.sidebar.button("🔄 Sincronizar"): st.rerun()
-    if st.sidebar.button("🚪 Encerrar Turno (Sair)"):
-        st.session_state.update({"autenticado": False, "usuario_logado": None, "perfil": None})
-        st.rerun()
+    col_s1, col_s2 = st.sidebar.columns(2)
+    with col_s1:
+        if st.button("🔄 Sync", use_container_width=True): st.rerun()
+    with col_s2:
+        if st.button("🚪 Sair", use_container_width=True):
+            st.session_state.update({"autenticado": False, "usuario_logado": None, "perfil": None})
+            st.rerun()
 
     if menu_selecionado == "🏭 Linha de Produção":
         painel_fabrica(matriz_receitas, fila, hist_formatado, st.session_state["usuario_logado"])
